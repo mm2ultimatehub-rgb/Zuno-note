@@ -70,6 +70,41 @@ async function getInstalledVersion(): Promise<string> {
   return CURRENT_APP_VERSION;
 }
 
+interface PublishedUpdateManifest {
+  version: string;
+  apkUrl?: string;
+  publishedAt?: string;
+  notes?: string[];
+  sizeBytes?: number;
+}
+
+async function checkPublishedManifest(installedVersion: string): Promise<ApkReleaseInfo | null> {
+  const manifestUrl = 'https://raw.githubusercontent.com/mm2ultimatehub-rgb/Zuno-note/main/public/zuno-update.json';
+  try {
+    const response = await fetch(`${manifestUrl}?zuno=${Date.now()}`, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
+    });
+    if (!response.ok) return null;
+    const manifest = await response.json() as Partial<PublishedUpdateManifest>;
+    if (!manifest.version || !/^\d+\.\d+\.\d+$/.test(manifest.version)) return null;
+    const downloadUrl = manifest.apkUrl || 'https://github.com/mm2ultimatehub-rgb/Zuno-note/releases/latest/download/Zuno-Note-release.apk';
+    if (!downloadUrl.startsWith('https://github.com/mm2ultimatehub-rgb/Zuno-note/releases/')) return null;
+    return {
+      version: manifest.version,
+      installedVersion,
+      sizeLabel: manifest.sizeBytes ? `${(manifest.sizeBytes / (1024 * 1024)).toFixed(1)} MB` : 'Boyut indirme sırasında belirlenir',
+      publishedAt: manifest.publishedAt ? new Date(manifest.publishedAt).toLocaleDateString('tr-TR') : 'GitHub Releases',
+      notes: Array.isArray(manifest.notes) ? manifest.notes.slice(0, 4) : ['Resmî Zuno Note güncellemesi bulundu.'],
+      downloadUrl,
+      hasUpdate: compareSemver(manifest.version, installedVersion) > 0,
+      isDemo: false,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function checkForApkUpdate(
   cfg: ApkUpdateConfig
 ): Promise<ApkReleaseInfo> {
