@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: 22
       - name: Install dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
       - name: Build web assets for native app
         run: npm run build
       - name: Create Android project
