@@ -16,6 +16,7 @@ import {
   PenTool,
   RotateCcw,
   Search,
+  Settings,
   Star,
   Trash2,
   X,
@@ -836,7 +837,7 @@ export default function App() {
                   : 'bg-white/[0.06] text-[#e6f2f2] hover:bg-white/[0.1]'
               }`}
             >
-              <span>⚙</span>
+              <Settings className="w-4 h-4" aria-hidden="true" />
               <span>Ayarlar</span>
             </button>
 
