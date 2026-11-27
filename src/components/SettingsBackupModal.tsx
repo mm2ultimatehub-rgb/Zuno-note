@@ -144,7 +144,7 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
   const handleDownloadApk = () => {
     if (!releaseInfo) return;
     if (!releaseInfo.hasUpdate) {
-      setApkStatus(`Zuno Note v${CURRENT_APP_VERSION} zaten güncel. Aynı sürüm tekrar indirilmedi.`);
+      setApkStatus(`Zuno Note v${releaseInfo.installedVersion} zaten güncel. Aynı sürüm tekrar indirilmedi.`);
       return;
     }
     if (releaseInfo.downloadUrl.startsWith('http')) {
@@ -177,7 +177,7 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
                 Yerel Depolama & APK
               </h2>
               <p className="text-[11px] text-[#84a0a0] tabular-nums">
-                Mevcut sürüm: v{CURRENT_APP_VERSION}
+                Mevcut sürüm: v{releaseInfo?.installedVersion || CURRENT_APP_VERSION}
               </p>
             </div>
           </div>
