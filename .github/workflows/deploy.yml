@@ -1,46 +1,45 @@
-name: GitHub Pages ve APK Derleme Hazırlığı
+name: Zuno Note Android APK
 
 on:
   push:
-    branches: ["main", "master"]
+    branches: [main, master]
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
 
 jobs:
-  build:
+  android-apk:
     runs-on: ubuntu-latest
     steps:
-      - name: Depoyu Klonla
+      - name: Checkout
         uses: actions/checkout@v4
-      - name: Node.js Kur
+      - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
-      - name: Bağımlılıkları Yükle
-        run: npm ci
-      - name: Uygulamayı Derle
+          node-version: 22
+      - name: Install dependencies
+        run: npm install
+      - name: Build web assets for native app
         run: npm run build
-      - name: Pages Artifact Yükle
-        uses: actions/upload-pages-artifact@v3
+      - name: Create Android project
+        run: npx cap add android
+      - name: Sync Capacitor
+        run: npx cap sync android
+      - name: Set up Java
+        uses: actions/setup-java@v4
         with:
-          path: ./dist
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: GitHub Pages Yayınla
-        id: deployment
-        uses: actions/deploy-pages@v4
+          distribution: temurin
+          java-version: 21
+      - name: Build installable APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Zuno-Note-Android-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
