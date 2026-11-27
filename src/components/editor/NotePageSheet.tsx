@@ -701,14 +701,27 @@ export const NotePageSheet: React.FC<NotePageSheetProps> = ({
       return;
     }
 
-    const pt = snapPointToRulerIfNear(rawPt);
     const stroke = activeStrokeRef.current;
     if (!stroke || liveAutoShapeIdRef.current === stroke.id) return;
-    const last = stroke.points[stroke.points.length - 1];
-    const dist = Math.hypot(pt.x - last.x, pt.y - last.y);
-    if (dist < 1.2) return;
 
-    stroke.points.push(pt);
+    // Modern stylus digitizers report several samples between animation frames.
+    // Consume them all to preserve fine S Pen movement and pressure/tilt data.
+    const nativeEvent = e.nativeEvent as PointerEvent;
+    const samples =
+      e.pointerType === 'pen' && typeof nativeEvent.getCoalescedEvents === 'function'
+        ? nativeEvent.getCoalescedEvents()
+        : [nativeEvent];
+    let changed = false;
+    for (const sample of samples) {
+      const samplePt = snapPointToRulerIfNear(getLogicalCoordsFromClient(sample));
+      const last = stroke.points[stroke.points.length - 1];
+      const dist = Math.hypot(samplePt.x - last.x, samplePt.y - last.y);
+      const minDistance = e.pointerType === 'pen' ? 0.35 : 1.0;
+      if (dist < minDistance) continue;
+      stroke.points.push(samplePt);
+      changed = true;
+    }
+    if (!changed) return;
     redrawCanvas(stroke);
 
     if (holdTimerRef.current) window.clearTimeout(holdTimerRef.current);
@@ -775,6 +788,15 @@ export const NotePageSheet: React.FC<NotePageSheetProps> = ({
     }
 
     if (activeStrokeRef.current) {
+      // Keep the final digitizer sample; some Android stylus drivers deliver it
+      // in pointerup rather than the last pointermove.
+      if (e.pointerType === 'pen' && tool !== 'shape') {
+        const finalPoint = snapPointToRulerIfNear(getLogicalCoords(e));
+        const lastPoint = activeStrokeRef.current.points.at(-1);
+        if (lastPoint && Math.hypot(finalPoint.x - lastPoint.x, finalPoint.y - lastPoint.y) > 0.2) {
+          activeStrokeRef.current.points.push(finalPoint);
+        }
+      }
       let finished = activeStrokeRef.current;
       activeStrokeRef.current = null;
       shapeStartRef.current = null;
@@ -866,13 +888,19 @@ export const NotePageSheet: React.FC<NotePageSheetProps> = ({
         eraseAtPoint(moveRaw);
         return;
       }
-      const pt = snapPointToRulerIfNear(moveRaw);
       const stroke = activeStrokeRef.current;
       if (!stroke || liveAutoShapeIdRef.current === stroke.id) return;
-      const last = stroke.points[stroke.points.length - 1];
-      if (Math.hypot(pt.x - last.x, pt.y - last.y) < 1.2) return;
-      stroke.points.push(pt);
-      redrawCanvas(stroke);
+      const samples =
+        typeof ev.getCoalescedEvents === 'function' ? ev.getCoalescedEvents() : [ev];
+      let changed = false;
+      for (const sample of samples) {
+        const pt = snapPointToRulerIfNear(getLogicalCoordsFromClient(sample));
+        const last = stroke.points[stroke.points.length - 1];
+        if (Math.hypot(pt.x - last.x, pt.y - last.y) < 0.35) continue;
+        stroke.points.push(pt);
+        changed = true;
+      }
+      if (changed) redrawCanvas(stroke);
     };
 
     const cleanup = () => {
