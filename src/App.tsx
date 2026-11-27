@@ -222,7 +222,7 @@ export default function App() {
   }, [notes]);
 
   const filteredNotes = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
+    const q = searchQuery.trim().toLocaleLowerCase('tr-TR');
     const list = notes.filter((n) => {
       if (activeSection === 'trash') {
         if (!n.isTrashed) return false;
@@ -237,16 +237,29 @@ export default function App() {
       }
 
       if (!q) return true;
-      const inTitle = n.title.toLowerCase().includes(q);
-      const inContent = n.isLocked ? false : n.content.toLowerCase().includes(q);
-      const inBoxes = n.isLocked
-        ? false
-        : (n.textBoxes || []).some((b) => b.text.toLowerCase().includes(q));
-      const inChecklist = n.isLocked
-        ? false
-        : n.checklists.some((c) => c.text.toLowerCase().includes(q));
-      const inTags = (n.tags || []).some((t) => `#${t}`.includes(q) || t.includes(q));
-      return inTitle || inContent || inBoxes || inChecklist || inTags;
+
+      // Search every page and supported content type, not only the legacy
+      // first-page fields. Locked note bodies remain excluded from indexing.
+      const searchableParts = [n.title, ...(n.tags || []).map((tag) => `#${tag}`)];
+      if (!n.isLocked) {
+        const pages = n.pages || [];
+        searchableParts.push(
+          n.content,
+          ...(n.textBoxes || []).map((box) => box.text),
+          ...(n.checklists || []).map((item) => item.text),
+          ...(n.attachments || []).map((item) => item.name),
+          ...(n.voiceNotes || []).map((voice) => voice.name),
+          ...pages.flatMap((page) => [
+            page.content || '',
+            ...(page.textBoxes || []).map((box) => box.text),
+            ...(page.checklists || []).map((item) => item.text),
+            ...(page.attachments || []).map((item) => item.name),
+          ])
+        );
+      }
+      return searchableParts.some((part) =>
+        String(part || '').toLocaleLowerCase('tr-TR').includes(q)
+      );
     });
 
     return list.sort((a, b) => {
