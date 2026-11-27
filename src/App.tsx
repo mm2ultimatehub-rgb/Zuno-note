@@ -660,6 +660,13 @@ export default function App() {
               setImportNotice('Bu Zuno yedeği geçersiz veya desteklenmiyor. Mevcut notların korunuyor.');
               return;
             }
+            const confirmed = window.confirm(
+              `Bu yedek ${backup.notes.length} not ve ${backup.folders.length} klasör içeriyor. Mevcut not ve klasörlerin yedekteki içerikle tamamen değiştirilecek. Önce güncel yedeğini aldığından emin ol. Devam edilsin mi?`
+            );
+            if (!confirmed) {
+              setImportNotice('Yedek geri yükleme iptal edildi. Mevcut notların korundu.');
+              return;
+            }
             const restored = await replaceAllData(backup as AppBackupData);
             setNotes(restored.notes);
             setFolders(restored.folders);
