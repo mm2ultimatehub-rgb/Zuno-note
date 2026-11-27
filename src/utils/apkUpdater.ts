@@ -76,10 +76,18 @@ export async function checkForApkUpdate(
 
   if (repo && repo.includes('/') && !repo.startsWith('demo')) {
     try {
-      const res = await fetch(
-        `https://api.github.com/repos/${repo}/releases/latest`,
-        { headers: { Accept: 'application/vnd.github+json' } }
-      );
+      // Android WebView may cache the GitHub latest-release response. Add a
+      // cache-buster and explicitly bypass browser/service-worker caches so
+      // every manual update check sees the newest published release.
+      const releaseApiUrl = `https://api.github.com/repos/${repo}/releases/latest?zuno_check=${Date.now()}`;
+      const res = await fetch(releaseApiUrl, {
+        cache: 'no-store',
+        headers: {
+          Accept: 'application/vnd.github+json',
+          'Cache-Control': 'no-cache',
+          Pragma: 'no-cache',
+        },
+      });
       if (res.ok) {
         const data = (await res.json()) as {
           tag_name?: string;
