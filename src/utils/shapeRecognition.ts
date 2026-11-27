@@ -741,6 +741,26 @@ export function drawCanvasStroke(
     return;
   }
 
+  // Pressure-sensitive S Pen ink: a subtle, stable width response for the
+  // standard ballpoint, without changing the stored vector points.
+  if (style === 'ballpoint' && pts.length > 1 && !stroke.filled) {
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i];
+      const p1 = pts[i + 1];
+      const pressure0 = Number.isFinite(p0.pressure) ? p0.pressure : 0.5;
+      const pressure1 = Number.isFinite(p1.pressure) ? p1.pressure : pressure0;
+      const pressure = Math.max(0, Math.min(1, (pressure0 + pressure1) / 2));
+      const pressureWidth = Math.max(0.55, Math.min(1.7, 0.55 + pressure * 1.15));
+      ctx.lineWidth = baseWidth * scaleX * pressureWidth;
+      ctx.beginPath();
+      ctx.moveTo(p0.x * scaleX, p0.y * scaleY);
+      ctx.lineTo(p1.x * scaleX, p1.y * scaleY);
+      ctx.stroke();
+    }
+    ctx.restore();
+    return;
+  }
+
   ctx.lineWidth = baseWidth * scaleX;
   ctx.beginPath();
   ctx.moveTo(pts[0].x * scaleX, pts[0].y * scaleY);
