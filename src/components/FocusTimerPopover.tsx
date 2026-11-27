@@ -34,34 +34,78 @@ export const FocusTimerPopover: React.FC<FocusTimerPopoverProps> = ({
   onNotify,
 }) => {
   const { accentCss, darkCss } = useExpressive();
+  const TIMER_KEY = 'zuno_note_focus_timer_v1';
+  const readSaved = () => {
+    try {
+      const value = JSON.parse(localStorage.getItem(TIMER_KEY) || 'null');
+      if (value && typeof value.presetMin === 'number') return value;
+    } catch { /* use defaults */ }
+    return null;
+  };
   const [isOpen, setIsOpen] = useState(false);
-  const [presetMin, setPresetMin] = useState(25);
-  const [secondsLeft, setSecondsLeft] = useState(25 * 60);
-  const [running, setRunning] = useState(false);
+  const [presetMin, setPresetMin] = useState(() => readSaved()?.presetMin ?? 25);
+  const [secondsLeft, setSecondsLeft] = useState(() => {
+    const saved = readSaved();
+    return saved?.running && saved?.endsAt
+      ? Math.max(0, Math.ceil((saved.endsAt - Date.now()) / 1000))
+      : saved?.secondsLeft ?? 25 * 60;
+  });
+  const [running, setRunning] = useState(() => {
+    const saved = readSaved();
+    return Boolean(saved?.running && saved?.endsAt > Date.now());
+  });
+  const [endsAt, setEndsAt] = useState<number | null>(() => {
+    const saved = readSaved();
+    return saved?.running && saved?.endsAt > Date.now() ? saved.endsAt : null;
+  });
+
+  // Persist the deadline, not a decrementing counter: background throttling and
+  // app restarts no longer make the Pomodoro drift or silently reset.
+  useEffect(() => {
+    try {
+      localStorage.setItem(TIMER_KEY, JSON.stringify({ presetMin, secondsLeft, running, endsAt }));
+    } catch { /* timer remains usable when storage is unavailable */ }
+  }, [presetMin, secondsLeft, running, endsAt]);
 
   useEffect(() => {
-    if (!running) return;
-    const id = window.setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev <= 1) {
-          setRunning(false);
-          playSoftChime();
-          onNotify('Odak süresi tamamlandı!');
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => window.clearInterval(id);
-  }, [running, onNotify]);
+    if (!running || !endsAt) return;
+    const tick = () => {
+      const remaining = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+      setSecondsLeft(remaining);
+      if (remaining === 0) {
+        setRunning(false);
+        setEndsAt(null);
+        playSoftChime();
+        onNotify('Odak süresi tamamlandı!');
+      }
+    };
+    tick();
+    const id = window.setInterval(tick, 500);
+    document.addEventListener('visibilitychange', tick);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener('visibilitychange', tick);
+    };
+  }, [running, endsAt, onNotify]);
 
   const mins = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
   const secs = String(secondsLeft % 60).padStart(2, '0');
 
   const selectPreset = (m: number) => {
     setRunning(false);
+    setEndsAt(null);
     setPresetMin(m);
     setSecondsLeft(m * 60);
+  };
+
+  const toggleTimer = () => {
+    if (running) {
+      setRunning(false);
+      setEndsAt(null);
+      return;
+    }
+    setEndsAt(Date.now() + secondsLeft * 1000);
+    setRunning(true);
   };
 
   return (
@@ -142,7 +186,7 @@ export const FocusTimerPopover: React.FC<FocusTimerPopoverProps> = ({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setRunning((r) => !r)}
+              onClick={toggleTimer}
               style={{ backgroundColor: accentCss, color: darkCss }}
               className="flex-1 h-9 rounded-full flex items-center justify-center gap-1.5 text-xs font-semibold"
             >
