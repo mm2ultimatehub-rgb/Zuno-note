@@ -132,6 +132,31 @@ export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
           {renderInline(line.slice(2), isLightPaper)}
         </blockquote>
       );
+    } else if (/^\s*[-*]\s+\[([ xX])\]\s+/.test(line)) {
+      const taskMatch = line.match(/^\s*[-*]\s+\[([ xX])\]\s+(.+)$/);
+      if (taskMatch) {
+        const checked = taskMatch[1].toLowerCase() === 'x';
+        elements.push(
+          <div key={i} className="flex items-start gap-2.5 pl-1">
+            <span className={`mt-1 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded border ${checked ? 'border-[var(--accent)] bg-[var(--accent)]/15 text-[var(--accent)]' : 'border-current opacity-50'}`}>
+              {checked ? '✓' : ''}
+            </span>
+            <span className={`leading-[30px] ${checked ? 'line-through opacity-55' : ''}`}>
+              {renderInline(taskMatch[2], isLightPaper)}
+            </span>
+          </div>
+        );
+      }
+    } else if (/^\s*\d+[.)]\s+/.test(line)) {
+      const ordered = line.match(/^\s*(\d+)[.)]\s+(.+)$/);
+      if (ordered) {
+        elements.push(
+          <div key={i} className="flex items-start gap-2.5 pl-1">
+            <span className="min-w-5 pt-1 text-xs font-medium text-[var(--accent)] tabular-nums">{ordered[1]}.</span>
+            <span className="leading-[30px]">{renderInline(ordered[2], isLightPaper)}</span>
+          </div>
+        );
+      }
     } else if (/^([-*•])\s+/.test(line)) {
       const clean = line.replace(/^([-*•])\s+/, '');
       elements.push(
@@ -158,6 +183,21 @@ export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
         </p>
       );
     }
+  }
+
+  if (inCodeBlock && codeLines.length > 0) {
+    elements.push(
+      <pre
+        key="code-unclosed"
+        className={`font-mono text-xs sm:text-sm p-3.5 rounded-2xl overflow-x-auto border ${
+          isLightPaper
+            ? 'bg-[#0b1214]/5 border-[#84a0a0]/30 text-[#0b1214]'
+            : 'bg-[#070b0c] border-[#1b2c2e] text-[var(--accent)]'
+        }`}
+      >
+        <code>{codeLines.join('\n')}</code>
+      </pre>
+    );
   }
 
   return (
