@@ -1,9 +1,10 @@
 export const CURRENT_APP_VERSION = '1.2.0';
 
-const APK_CONFIG_KEY = 'karanot_apk_config_v1';
+const APK_CONFIG_KEY = 'zuno_note_apk_config_v1';
+const LEGACY_APK_CONFIG_KEY = 'karanot_apk_config_v1';
 
 export interface ApkUpdateConfig {
-  githubRepo: string; // e.g. "kullanici/karanot"
+  githubRepo: string; // e.g. "mm2ultimatehub-rgb/Zuno-note"
   directApkUrl: string; // optional direct APK URL
 }
 
@@ -19,7 +20,7 @@ export interface ApkReleaseInfo {
 
 export function loadApkConfig(): ApkUpdateConfig {
   try {
-    const raw = localStorage.getItem(APK_CONFIG_KEY);
+    const raw = localStorage.getItem(APK_CONFIG_KEY) || localStorage.getItem(LEGACY_APK_CONFIG_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<ApkUpdateConfig>;
       return {
@@ -89,11 +90,7 @@ export async function checkForApkUpdate(
             .map((l) => l.replace(/^[-*]\s*/, '').trim())
             .filter(Boolean)
             .slice(0, 4),
-          downloadUrl:
-            apkAsset?.browser_download_url ||
-            cfg.directApkUrl.trim() ||
-            data.html_url ||
-            '#',
+          downloadUrl: apkAsset?.browser_download_url || cfg.directApkUrl.trim() || '',
           hasUpdate: compareSemver(latestVer, CURRENT_APP_VERSION) > 0,
           isDemo: false,
         };
@@ -103,19 +100,19 @@ export async function checkForApkUpdate(
     }
   }
 
-  // Demo update preview (until user configures their real GitHub repo / APK URL)
-  await new Promise((r) => setTimeout(r, 450));
+  // Do not invent release versions or provide a fake download.
   return {
-    version: '1.3.0-demo',
-    sizeLabel: '14.8 MB',
-    publishedAt: 'Demo Sürüm',
+    version: CURRENT_APP_VERSION,
+    sizeLabel: 'APK bulunamadı',
+    publishedAt: 'Kontrol tamamlanamadı',
     notes: [
-      'Çoklu sayfa ve yan sayfa çekmecesi eklendi',
-      'Akıllı şekil algılama ve otomatik düzeltme',
-      '9 farklı fırça/kalem motoru ve 16 renk paleti',
+      repo
+        ? 'GitHub deposuna erişilemedi veya bir Releases sürümü yayımlanmamış.'
+        : 'Gerçek güncelleme kontrolü için GitHub kullanıcı/repo bilgisi ya da doğrudan APK bağlantısı ekleyin.',
+      'Zuno Note sahte sürüm veya APK dosyası oluşturmaz.',
     ],
-    downloadUrl: cfg.directApkUrl.trim() || 'demo://karanot-v1.3.0.apk',
-    hasUpdate: true,
+    downloadUrl: cfg.directApkUrl.trim(),
+    hasUpdate: false,
     isDemo: true,
   };
 }
