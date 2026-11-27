@@ -26,7 +26,9 @@ export function loadApkConfig(): ApkUpdateConfig {
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<ApkUpdateConfig>;
       const config = {
-        githubRepo: parsed.githubRepo || DEFAULT_GITHUB_REPO,
+        // Keep the updater pinned to the official Zuno Note repository.
+        // Old user-entered repository values must not redirect update checks.
+        githubRepo: DEFAULT_GITHUB_REPO,
         directApkUrl: parsed.directApkUrl || '',
       };
       localStorage.setItem(APK_CONFIG_KEY, JSON.stringify(config));
