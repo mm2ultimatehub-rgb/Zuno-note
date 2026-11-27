@@ -98,6 +98,7 @@ import {
   StrokeDashStyle,
 } from '../types/notes';
 import { NoteTemplate } from '../data/templates';
+import { flushPendingSaves } from '../db/localDb';
 import { formatFullDateTR, formatShortDateTR } from '../utils/dateFormat';
 import { hasStoredPin, savePin } from '../utils/pinLock';
 import { drawCanvasStamp, drawCanvasStroke } from '../utils/shapeRecognition';
@@ -926,7 +927,9 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         setShowFindBar((v) => !v);
       } else if (mod && e.key.toLowerCase() === 's') {
         e.preventDefault();
-        showToast('Not yerel belleğe kaydedildi');
+        void flushPendingSaves().then(() => {
+          showToast('Not yerel belleğe kaydedildi');
+        });
       } else if (mod && e.key.toLowerCase() === 'z' && !inTextInput) {
         e.preventDefault();
         if (e.shiftKey) handleRedo();
