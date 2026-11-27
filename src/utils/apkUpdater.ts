@@ -75,7 +75,7 @@ export async function checkForApkUpdate(
   const repo = (cfg.githubRepo || DEFAULT_GITHUB_REPO).trim();
 
   // Accept only a GitHub owner/repository slug; reject full URLs and path fragments.
-  if (/^[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+$/.test(repo) && !repo.toLowerCase().startsWith('demo/')) {
+  if (/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo) && !repo.toLowerCase().startsWith('demo/')) {
     try {
       // Android WebView may cache the GitHub latest-release response. Add a
       // cache-buster and explicitly bypass browser/service-worker caches so
