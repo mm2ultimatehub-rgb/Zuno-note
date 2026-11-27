@@ -126,6 +126,10 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
 
   const handleDownloadApk = () => {
     if (!releaseInfo) return;
+    if (!releaseInfo.hasUpdate && !apkConfig.directApkUrl.trim()) {
+      setApkStatus(`Zuno Note v${CURRENT_APP_VERSION} zaten güncel. Aynı sürüm tekrar indirilmedi.`);
+      return;
+    }
     if (releaseInfo.downloadUrl.startsWith('http')) {
       const a = document.createElement('a');
       a.href = releaseInfo.downloadUrl;
@@ -262,14 +266,17 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
                 <button
                   type="button"
                   onClick={handleDownloadApk}
+                  disabled={!releaseInfo.downloadUrl || (!releaseInfo.hasUpdate && !apkConfig.directApkUrl.trim())}
                   style={{ backgroundColor: accentCss, color: darkCss }}
                   className="w-full flex items-center justify-center gap-2 py-2.5 rounded-full text-xs font-semibold hover:opacity-95 transition-opacity"
                 >
                   <Download className="w-4 h-4" />
                   <span>
-                    {releaseInfo.downloadUrl
-                      ? `v${releaseInfo.version} APK İndir`
-                      : 'APK bağlantısı yok'}
+                    {!releaseInfo.downloadUrl
+                      ? 'APK bağlantısı yok'
+                      : !releaseInfo.hasUpdate && !apkConfig.directApkUrl.trim()
+                        ? 'Zuno Note güncel'
+                        : `v${releaseInfo.version} APK İndir`}
                   </span>
                 </button>
               </div>
