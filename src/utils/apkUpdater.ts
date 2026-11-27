@@ -23,10 +23,12 @@ export function loadApkConfig(): ApkUpdateConfig {
     const raw = localStorage.getItem(APK_CONFIG_KEY) || localStorage.getItem(LEGACY_APK_CONFIG_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<ApkUpdateConfig>;
-      return {
+      const config = {
         githubRepo: parsed.githubRepo || '',
         directApkUrl: parsed.directApkUrl || '',
       };
+      localStorage.setItem(APK_CONFIG_KEY, JSON.stringify(config));
+      return config;
     }
   } catch {
     // Ignore storage error
@@ -78,7 +80,7 @@ export async function checkForApkUpdate(
         );
         const sizeMb = apkAsset?.size
           ? `${(apkAsset.size / (1024 * 1024)).toFixed(1)} MB`
-          : 'APK Hazır';
+          : 'APK asset yok';
         return {
           version: latestVer,
           sizeLabel: sizeMb,
@@ -96,7 +98,7 @@ export async function checkForApkUpdate(
         };
       }
     } catch {
-      // Fall back to demo release preview if offline or repo unreachable
+      // Report unavailable releases without inventing a preview.
     }
   }
 
