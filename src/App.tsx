@@ -1128,12 +1128,20 @@ export default function App() {
                     ? 'Çöp kutusu boş'
                     : activeSection === 'favorites'
                     ? 'Favori not yok'
+                    : activeSection === 'folder'
+                    ? 'Bu klasör boş'
                     : 'Not defterin hazır'}
                 </h2>
                 <p className="text-sm text-[#84a0a0] leading-relaxed">
-                  {activeSection === 'trash'
-                    ? 'Sildiğiniz notlar burada listelenir.'
-                    : 'Tüm notların cihazındaki yerel bellekte saklanır. Boş bir sayfa aç veya yukarıdaki şablonlardan birini seç.'}
+                  {searchQuery
+                    ? `“${searchQuery}” için sonuç bulunamadı. Başka bir kelime deneyebilir veya aramayı temizleyebilirsin.`
+                    : activeSection === 'trash'
+                    ? 'Sildiğiniz notlar burada listelenir. İstersen notları geri yükleyebilir veya kalıcı olarak silebilirsin.'
+                    : activeSection === 'favorites'
+                    ? 'Önemli notlarını yıldızlayarak burada hızlıca bulabilirsin.'
+                    : activeSection === 'folder'
+                    ? 'Bu klasöre yeni bir not oluştur veya mevcut notları klasör menüsünden buraya taşı.'
+                    : 'Notların bu cihazda yerel olarak saklanır. Yeni bir sayfa açabilir veya hazır bir şablonla başlayabilirsin.'}
                 </p>
               </div>
 
