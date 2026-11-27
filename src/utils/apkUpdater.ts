@@ -98,10 +98,21 @@ export async function checkForApkUpdate(
           assets?: { name: string; browser_download_url: string; size?: number }[];
         };
         const latestVer = (data.tag_name || CURRENT_APP_VERSION).replace(/^v/i, '');
-        const apkAsset = data.assets?.find((a) =>
-          a.name.toLowerCase().endsWith('.apk') &&
-          a.browser_download_url.startsWith('https://github.com/')
-        );
+        // Only offer a release APK. A debug/unsigned artifact can have a
+        // different signing certificate and Android will refuse to update
+        // the installed app over it.
+        const apkAsset = data.assets?.find((a) => {
+          const name = a.name.toLowerCase();
+          const url = a.browser_download_url;
+          return (
+            name.endsWith('.apk') &&
+            name.includes('release') &&
+            !name.includes('debug') &&
+            !name.includes('unsigned') &&
+            url.startsWith('https://github.com/') &&
+            url.includes('/releases/download/')
+          );
+        });
         const sizeMb = apkAsset?.size
           ? `${(apkAsset.size / (1024 * 1024)).toFixed(1)} MB`
           : 'APK asset yok';
