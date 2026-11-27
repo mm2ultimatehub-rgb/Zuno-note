@@ -16,9 +16,9 @@ export default defineConfig(() => {
         includeAssets: ['icon.svg', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-maskable-512x512.png'],
         manifest: {
           id: './',
-          name: 'Karanot — Not Defteri',
-          short_name: 'Karanot',
-          description: 'Çevrimdışı çalışan, el yazısı ve metin destekli, yerel depolamalı modern not defteri.',
+          name: 'Zuno Note — Akıllı Not Defteri',
+          short_name: 'Zuno Note',
+          description: 'Çevrimdışı çalışan; metin, el yazısı, çizim ve çok sayfalı notlar sunan modern not defteri.',
           theme_color: '#0b1214',
           background_color: '#0b1214',
           display: 'standalone',
@@ -26,24 +26,9 @@ export default defineConfig(() => {
           start_url: './',
           scope: './',
           icons: [
-            {
-              src: './pwa-192x192.png',
-              sizes: '192x192',
-              type: 'image/png',
-              purpose: 'any',
-            },
-            {
-              src: './pwa-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'any',
-            },
-            {
-              src: './pwa-maskable-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'maskable',
-            },
+            { src: './pwa-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+            { src: './pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+            { src: './pwa-maskable-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
           ],
         },
         workbox: {
@@ -54,13 +39,8 @@ export default defineConfig(() => {
               handler: 'CacheFirst',
               options: {
                 cacheName: 'google-fonts-cache',
-                expiration: {
-                  maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365,
-                },
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
+                expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+                cacheableResponse: { statuses: [0, 200] },
               },
             },
             {
@@ -68,13 +48,8 @@ export default defineConfig(() => {
               handler: 'CacheFirst',
               options: {
                 cacheName: 'gstatic-fonts-cache',
-                expiration: {
-                  maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365,
-                },
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
+                expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+                cacheableResponse: { statuses: [0, 200] },
               },
             },
           ],
@@ -84,16 +59,13 @@ export default defineConfig(() => {
           type: 'module',
         },
       }),
-      // Copies src/assets into dist/ so root-relative URLs like
-      // "/src/assets/images/..." (e.g. generate_image output) still resolve
-      // in production builds. Do not remove.
+      // Copies src/assets into dist/ so root-relative URLs still resolve.
+      // Do not remove.
       {
         name: 'copy-unbundled-src-assets',
         apply: 'build',
         closeBundle(error?: Error): void {
-          if (error) {
-            return;
-          }
+          if (error) return;
           const distDir = path.resolve(__dirname, 'dist');
           const srcAssets = path.resolve(__dirname, 'src/assets');
           const distAssets = path.resolve(distDir, 'src/assets');
@@ -104,15 +76,11 @@ export default defineConfig(() => {
       },
     ],
     resolve: {
-      alias: {
-        '@': path.resolve(__dirname, '.'),
-      },
+      alias: { '@': path.resolve(__dirname, '.') },
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modify—file watching is disabled to prevent flickering during agent edits.
+      // HMR and file watching controls are used by the hosted editor.
       hmr: process.env.DISABLE_HMR !== 'true',
-      // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
   };
