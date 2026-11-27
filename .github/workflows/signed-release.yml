@@ -58,6 +58,12 @@ jobs:
       - name: Generate Android project
         run: npx cap add android
 
+      - name: Generate Zuno Note app icons
+        run: |
+          mkdir -p assets
+          cp public/icon.svg assets/icon.svg
+          npx --yes @capacitor/assets generate --android --assetPath assets --iconBackgroundColor '#101114' --iconBackgroundColorDark '#101114' --splashBackgroundColor '#101114'
+
       - name: Sync Capacitor
         run: npx cap sync android
 
