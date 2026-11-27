@@ -1,4 +1,4 @@
-export const CURRENT_APP_VERSION = import.meta.env.VITE_APP_VERSION || '1.2.10';
+export const CURRENT_APP_VERSION = import.meta.env.VITE_APP_VERSION || '1.2.12';
 export const DEFAULT_GITHUB_REPO = 'mm2ultimatehub-rgb/Zuno-note';
 
 const APK_CONFIG_KEY = 'zuno_note_apk_config_v1';
@@ -74,7 +74,7 @@ export async function checkForApkUpdate(
   cfg: ApkUpdateConfig
 ): Promise<ApkReleaseInfo> {
   const installedVersion = await getInstalledVersion();
-  const repo = (cfg.githubRepo || DEFAULT_GITHUB_REPO).trim();
+  const repo = DEFAULT_GITHUB_REPO;\n\n  const publishedManifest = await checkPublishedManifest(installedVersion);\n  if (publishedManifest) return publishedManifest;
 
   // Accept only a GitHub owner/repository slug; reject full URLs and path fragments.
   if (/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo) && !repo.toLowerCase().startsWith('demo/')) {
