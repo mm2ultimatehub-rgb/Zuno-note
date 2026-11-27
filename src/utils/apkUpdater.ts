@@ -1,4 +1,4 @@
-export const CURRENT_APP_VERSION = import.meta.env.VITE_APP_VERSION || '1.2.12';
+export const CURRENT_APP_VERSION = import.meta.env.VITE_APP_VERSION || '1.2.13';
 export const DEFAULT_GITHUB_REPO = 'mm2ultimatehub-rgb/Zuno-note';
 
 const APK_CONFIG_KEY = 'zuno_note_apk_config_v1';
@@ -187,13 +187,11 @@ export async function checkForApkUpdate(
   return {
     version: CURRENT_APP_VERSION,
     installedVersion,
-    sizeLabel: 'APK bulunamadı',
-    publishedAt: 'Kontrol tamamlanamadı',
+    sizeLabel: 'Bağlantı kontrol edilemedi',
+    publishedAt: 'Kontrol başarısız',
     notes: [
-      repo
-        ? 'GitHub deposuna erişilemedi veya bir Releases sürümü yayımlanmamış.'
-        : 'GitHub Releases kaynağı ayarlanmadı. Zuno Note resmi deposu varsayılan olarak kullanılır.',
-      'Zuno Note sahte sürüm veya APK dosyası oluşturmaz.',
+      'Güncelleme sunucusuna erişilemedi. Bu, APK yayımlanmadığı anlamına gelmez.',
+      'İnternet bağlantını kontrol edip Güncellemeyi Kontrol Et düğmesine tekrar bas.',
     ],
     downloadUrl: '',
     hasUpdate: false,
