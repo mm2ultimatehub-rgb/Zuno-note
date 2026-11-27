@@ -13,13 +13,6 @@ function hexToBytes(hex: string): Uint8Array {
 
 function legacyHash(pin: string): string {
   const normalized = `karanot:${pin.trim()}`;
-  try {
-    if (typeof crypto !== 'undefined' && crypto.subtle) {
-      // Keep compatibility with PINs created by earlier app versions.
-      const bytes = new TextEncoder().encode(normalized);
-      return '';
-    }
-  } catch { /* old fallback below */ }
   let h = 2166136261;
   for (let i = 0; i < normalized.length; i++) {
     h ^= normalized.charCodeAt(i);
