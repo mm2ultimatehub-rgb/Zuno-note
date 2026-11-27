@@ -156,6 +156,7 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
 
   const handleCheckUpdate = async () => {
     setApkStatus(null);
+    setReleaseInfo(null); // prevent stale/old release data from looking like the new check result
     setIsCheckingApk(true);
     try {
       const info = await checkForApkUpdate(apkConfig);
@@ -276,12 +277,12 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
                       {releaseInfo.hasUpdate
                         ? `Zuno Note v${releaseInfo.version} hazır`
                         : releaseInfo.isDemo
-                          ? 'Release APK bulunamadı'
+                          ? 'Güncelleme sunucusuna ulaşılamadı'
                           : `En güncel sürüm v${releaseInfo.version}`}
                     </p>
                     <p className="text-[11px] text-[#84a0a0] tabular-nums">
                       Kurulu v{releaseInfo.installedVersion} · {releaseInfo.sizeLabel} · {releaseInfo.publishedAt}
-                      {releaseInfo.isDemo ? ' · APK dosyası eksik' : ''}
+                      {releaseInfo.isDemo ? ' · Sunucu yanıtı alınamadı' : ''}
                     </p>
                   </div>
                   <RefreshCw className="w-4 h-4 text-[var(--accent)] shrink-0" />
