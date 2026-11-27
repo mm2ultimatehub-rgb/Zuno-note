@@ -17,6 +17,7 @@ import {
   ApkReleaseInfo,
   checkForApkUpdate,
   CURRENT_APP_VERSION,
+  DEFAULT_GITHUB_REPO,
   loadApkConfig,
   saveApkConfig,
 } from '../utils/apkUpdater';
@@ -52,6 +53,7 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
   const [apkConfig, setApkConfig] = useState(() => loadApkConfig());
   const [releaseInfo, setReleaseInfo] = useState<ApkReleaseInfo | null>(null);
   const [apkStatus, setApkStatus] = useState<string | null>(null);
+  const [isCheckingApk, setIsCheckingApk] = useState(false);
   const [storageEstimate, setStorageEstimate] = useState<{
     usedBytes: number;
     quotaBytes: number;
@@ -60,6 +62,14 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
   React.useEffect(() => {
     if (!isOpen) return;
     let mounted = true;
+    setIsCheckingApk(true);
+    checkForApkUpdate(loadApkConfig()).then((info) => {
+      if (mounted) setReleaseInfo(info);
+    }).catch(() => {
+      if (mounted) setApkStatus('Sürüm kontrolü tamamlanamadı. Tekrar deneyebilirsin.');
+    }).finally(() => {
+      if (mounted) setIsCheckingApk(false);
+    });
     getStorageEstimate().then((est) => {
       if (mounted) setStorageEstimate(est);
     });
@@ -71,7 +81,7 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
       mounted = false;
       window.removeEventListener('keydown', onKey);
     };
-  }, [isOpen, onClose, notes.length]);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -120,13 +130,20 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
   const handleCheckUpdate = async () => {
     saveApkConfig(apkConfig);
     setApkStatus(null);
-    const info = await checkForApkUpdate(apkConfig);
-    setReleaseInfo(info);
+    setIsCheckingApk(true);
+    try {
+      const info = await checkForApkUpdate(apkConfig);
+      setReleaseInfo(info);
+    } catch {
+      setApkStatus('GitHub Releases kontrolü başarısız oldu. İnternet bağlantını kontrol edip yeniden dene.');
+    } finally {
+      setIsCheckingApk(false);
+    }
   };
 
   const handleDownloadApk = () => {
     if (!releaseInfo) return;
-    if (!releaseInfo.hasUpdate && !apkConfig.directApkUrl.trim()) {
+    if (!releaseInfo.hasUpdate) {
       setApkStatus(`Zuno Note v${CURRENT_APP_VERSION} zaten güncel. Aynı sürüm tekrar indirilmedi.`);
       return;
     }
@@ -136,7 +153,7 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
       a.download = `Zuno-Note-v${releaseInfo.version}.apk`;
       a.rel = 'noopener noreferrer';
       a.click();
-      setApkStatus('APK indirmesi başlatıldı. İndirilen dosyayı açarak güncelleyebilirsiniz.');
+      setApkStatus('İndirme başlatıldı. İndirilen Zuno Note APK dosyasını açıp Android kurulum ekranında Güncelle seçeneğine dokun.');
       return;
     }
 
@@ -216,26 +233,15 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
                   setApkConfig(next);
                   saveApkConfig(next);
                 }}
-                placeholder="GitHub Repo (örn: mm2ultimatehub-rgb/Zuno-note — boşsa demo)"
-                className="w-full rounded-xl bg-[#0b1214] border border-[#1b2c2e] px-3 py-2 text-xs text-[#e6f2f2] placeholder:text-[#84a0a0]/70 focus:outline-none focus:border-[var(--accent)]"
-              />
-              <input
-                type="url"
-                value={apkConfig.directApkUrl}
-                onChange={(e) => {
-                  const next = { ...apkConfig, directApkUrl: e.target.value };
-                  setApkConfig(next);
-                  saveApkConfig(next);
-                }}
-                placeholder="Doğrudan APK indirme linki (isteğe bağlı)"
+                placeholder={`GitHub deposu (varsayılan: ${DEFAULT_GITHUB_REPO})`}
                 className="w-full rounded-xl bg-[#0b1214] border border-[#1b2c2e] px-3 py-2 text-xs text-[#e6f2f2] placeholder:text-[#84a0a0]/70 focus:outline-none focus:border-[var(--accent)]"
               />
             </div>
 
             <LoadingActionButton
-              label="Yeni Sürüm Denetle"
+              label={isCheckingApk ? 'GitHub Releases kontrol ediliyor…' : 'Güncellemeleri Kontrol Et'}
               onAction={handleCheckUpdate}
-              height={68}
+              height={60}
             />
 
             {releaseInfo && (
@@ -244,12 +250,14 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
                   <div>
                     <p className="font-display text-sm font-semibold text-[#e6f2f2]">
                       {releaseInfo.hasUpdate
-                        ? `Yeni Sürüm Bulundu: v${releaseInfo.version}`
-                        : `Uygulama Güncel (v${releaseInfo.version})`}
+                        ? `Zuno Note v${releaseInfo.version} hazır`
+                        : releaseInfo.isDemo
+                          ? 'Release APK bulunamadı'
+                          : `En güncel sürüm v${releaseInfo.version}`}
                     </p>
                     <p className="text-[11px] text-[#84a0a0] tabular-nums">
                       {releaseInfo.sizeLabel} · {releaseInfo.publishedAt}
-                      {releaseInfo.isDemo ? ' · Demo önizleme' : ''}
+                      {releaseInfo.isDemo ? ' · APK dosyası eksik' : ''}
                     </p>
                   </div>
                   <RefreshCw className="w-4 h-4 text-[var(--accent)] shrink-0" />
@@ -266,7 +274,7 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
                 <button
                   type="button"
                   onClick={handleDownloadApk}
-                  disabled={!releaseInfo.downloadUrl || (!releaseInfo.hasUpdate && !apkConfig.directApkUrl.trim())}
+                  disabled={!releaseInfo.downloadUrl || !releaseInfo.hasUpdate}
                   style={{ backgroundColor: accentCss, color: darkCss }}
                   className="w-full flex items-center justify-center gap-2 py-2.5 rounded-full text-xs font-semibold hover:opacity-95 transition-opacity"
                 >
@@ -274,9 +282,9 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
                   <span>
                     {!releaseInfo.downloadUrl
                       ? 'APK bağlantısı yok'
-                      : !releaseInfo.hasUpdate && !apkConfig.directApkUrl.trim()
-                        ? 'Zuno Note güncel'
-                        : `v${releaseInfo.version} APK İndir`}
+                      : !releaseInfo.hasUpdate
+                        ? 'Uygulama Güncel'
+                        : `v${releaseInfo.version} Güncellemesini İndir`}
                   </span>
                 </button>
               </div>
@@ -284,6 +292,9 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
 
             {apkStatus && (
               <p className="text-xs text-[var(--accent)] leading-relaxed">{apkStatus}</p>
+            )}
+            {!apkStatus && !releaseInfo && (
+              <p className="text-xs text-[#84a0a0]">Resmî GitHub sürümü otomatik kontrol edilir. Yalnızca Releases bölümündeki gerçek APK kullanılır.</p>
             )}
           </div>
 
