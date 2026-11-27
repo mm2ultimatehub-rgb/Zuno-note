@@ -4,15 +4,20 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag (example: v1.2.1)"
-        required: true
+        description: "Optional release tag; leave blank to auto-increment"
+        required: false
         type: string
   push:
+    branches: [main, master]
     tags:
       - "v*"
 
 permissions:
   contents: write
+
+concurrency:
+  group: zuno-signed-release
+  cancel-in-progress: false
 
 jobs:
   signed-release:
@@ -32,19 +37,29 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - name: Resolve release version
+      - name: Resolve release version automatically
         env:
           INPUT_TAG: ${{ inputs.tag }}
           REF_NAME: ${{ github.ref_name }}
+          EVENT_NAME: ${{ github.event_name }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           TAG="$INPUT_TAG"
-          if [ -z "$TAG" ]; then TAG="$REF_NAME"; fi
+          if [ -z "$TAG" ] && [ "$EVENT_NAME" = "push" ] && [[ "$REF_NAME" == v* ]]; then TAG="$REF_NAME"; fi
+          if [ -z "$TAG" ]; then
+            LATEST="$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/${{ github.repository }}/releases/latest" | python3 -c 'import json,sys; print(json.load(sys.stdin)["tag_name"])')"
+            VERSION="${LATEST#v}"
+            IFS=. read -r MAJOR MINOR PATCH <<< "$VERSION"
+            TAG="v$MAJOR.$MINOR.$((PATCH + 1))"
+            echo "Automatically selected next release: $TAG"
+          fi
           VERSION="${TAG#v}"
           python3 - "$VERSION" <<'PY'
           import re, sys
           if not re.fullmatch(r"\\d+\\.\\d+\\.\\d+", sys.argv[1]):
-              raise SystemExit("Tag must use semantic version format, for example v1.2.2")
+              raise SystemExit("Release tag must use semantic version format, e.g. v1.2.2")
           PY
+          echo "RELEASE_TAG=$TAG" >> "$GITHUB_ENV"
           echo "RELEASE_VERSION=$VERSION" >> "$GITHUB_ENV"
 
       - name: Install dependencies
@@ -67,14 +82,10 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Set Android version from release tag
+      - name: Set Android version from calculated release tag
         env:
-          INPUT_TAG: ${{ inputs.tag }}
-          REF_NAME: ${{ github.ref_name }}
+          VERSION: ${{ env.RELEASE_VERSION }}
         run: |
-          TAG="$INPUT_TAG"
-          if [ -z "$TAG" ]; then TAG="$REF_NAME"; fi
-          VERSION="${TAG#v}"
           python3 - "$VERSION" <<'PY'
           import re, sys
           version = sys.argv[1]
@@ -149,14 +160,7 @@ jobs:
 
       - name: Determine release tag
         id: release
-        env:
-          INPUT_TAG: ${{ inputs.tag }}
-          REF_NAME: ${{ github.ref_name }}
-        run: |
-          TAG="$INPUT_TAG"
-          if [ -z "$TAG" ]; then TAG="$REF_NAME"; fi
-          test -n "$TAG" || (echo "A release tag is required" && exit 1)
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+        run: echo "tag=${{ env.RELEASE_TAG }}" >> "$GITHUB_OUTPUT"
 
       - name: Publish APK to GitHub Release
         uses: softprops/action-gh-release@v2
