@@ -108,6 +108,7 @@ export default function App() {
   const alertedRemindersRef = useRef<Set<string>>(new Set());
 
   const fileImportRef = useRef<HTMLInputElement | null>(null);
+  const [importNotice, setImportNotice] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -116,6 +117,10 @@ export default function App() {
       setNotes(loadedNotes);
       setFolders(loadedFolders);
       setIsLoaded(true);
+    }).catch(() => {
+      if (!mounted) return;
+      setIsLoaded(true);
+      setImportNotice('Notlar yüklenemedi. Cihaz depolama izinlerini ve boş alanı kontrol et.');
     });
     const handleFlush = () => {
       void flushPendingSaves();
@@ -558,11 +563,20 @@ export default function App() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
-      const mediaType: 'image' | 'video' = file.type.startsWith('video/')
-        ? 'video'
-        : 'image';
-      try {
+    setImportNotice(null);
+    try {
+      // Data URLs are stored in note records, so prevent oversized media/text
+      // imports from exhausting WebView memory or local storage.
+      const maxBytes = file.type.startsWith('video/') ? 35 * 1024 * 1024 : 50 * 1024 * 1024;
+      if (file.size > maxBytes) {
+        setImportNotice(`Dosya çok büyük. Bu tür için sınır ${Math.round(maxBytes / 1024 / 1024)} MB.`);
+        return;
+      }
+
+      if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+        const mediaType: 'image' | 'video' = file.type.startsWith('video/')
+          ? 'video'
+          : 'image';
         const dataUrl =
           mediaType === 'image'
             ? await optimizeImageDataUrl(file)
@@ -570,52 +584,59 @@ export default function App() {
         const dims = await detectMediaDimensions(dataUrl, mediaType);
         const created = createNewNoteObject({
           title: file.name.replace(/\.[^/.]+$/, ''),
-          attachments: [
-            {
-              id: `${mediaType === 'video' ? 'vid' : 'img'}_${Date.now()}`,
-              name: file.name,
-              mediaType,
-              dataUrl,
-              x: 64,
-              y: 180,
-              width: dims.width,
-              height: dims.height,
-              aspectRatio: dims.aspectRatio,
-              createdAt: Date.now(),
-            },
-          ],
+          attachments: [{
+            id: `${mediaType === 'video' ? 'vid' : 'img'}_${Date.now()}`,
+            name: file.name,
+            mediaType,
+            dataUrl,
+            x: 64,
+            y: 180,
+            width: dims.width,
+            height: dims.height,
+            aspectRatio: dims.aspectRatio,
+            createdAt: Date.now(),
+          }],
         });
         setNotes((prev) => [created, ...prev]);
         setActiveNoteId(created.id);
         await saveNote(created);
-      } catch {
-        // Ignore failed media import
-      }
-    } else {
-      const text = await file.text();
-      if (file.name.endsWith('.json')) {
-        try {
-          const parsed = JSON.parse(text) as AppBackupData;
-          if (Array.isArray(parsed.notes)) {
-            const restored = await replaceAllData(parsed);
+        setImportNotice('Medya yeni bir nota eklendi.');
+      } else {
+        const text = await file.text();
+        if (file.name.toLowerCase().endsWith('.json')) {
+          let parsed: unknown;
+          try {
+            parsed = JSON.parse(text);
+          } catch {
+            parsed = null;
+          }
+          if (parsed && typeof parsed === 'object' && 'notes' in parsed) {
+            const backup = parsed as Partial<AppBackupData>;
+            if (backup.version !== 1 || !Array.isArray(backup.notes) || !Array.isArray(backup.folders)) {
+              setImportNotice('Bu Zuno yedeği geçersiz veya desteklenmiyor. Mevcut notların korunuyor.');
+              return;
+            }
+            const restored = await replaceAllData(backup as AppBackupData);
             setNotes(restored.notes);
             setFolders(restored.folders);
-            e.target.value = '';
+            setImportNotice(`${restored.notes.length} not ve ${restored.folders.length} klasör geri yüklendi.`);
             return;
           }
-        } catch {
-          // Treat as plain text note
         }
+        const created = createNewNoteObject({
+          title: file.name.replace(/\.[^/.]+$/, ''),
+          content: text,
+        });
+        setNotes((prev) => [created, ...prev]);
+        setActiveNoteId(created.id);
+        await saveNote(created);
+        setImportNotice('Dosya içeriği yeni bir nota aktarıldı.');
       }
-      const created = createNewNoteObject({
-        title: file.name.replace(/\.[^/.]+$/, ''),
-        content: text,
-      });
-      setNotes((prev) => [created, ...prev]);
-      setActiveNoteId(created.id);
-      await saveNote(created);
+    } catch {
+      setImportNotice('Dosya içe aktarılamadı. Dosyanın türünü, sağlamlığını ve cihazdaki boş alanı kontrol et.');
+    } finally {
+      e.target.value = '';
     }
-    e.target.value = '';
   };
 
   const handleImportBackup = async (backup: AppBackupData) => {
@@ -894,6 +915,15 @@ export default function App() {
             )}
           </div>
         </header>
+
+        {importNotice && (
+          <div role="status" aria-live="polite" className="mx-3 sm:mx-6 mt-2 flex items-start gap-3 rounded-xl border border-[var(--accent)]/25 bg-[#142225] px-3.5 py-3 text-sm text-[#e6f2f2]">
+            <span className="flex-1 min-w-0 leading-relaxed">{importNotice}</span>
+            <button type="button" onClick={() => setImportNotice(null)} aria-label="Bildirimi kapat" className="shrink-0 rounded-lg p-1 text-[#84a0a0] hover:text-[#e6f2f2]">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         <ExpressiveSettingsPanel
           isOpen={showExpressivePanel}
