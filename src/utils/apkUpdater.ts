@@ -1,4 +1,4 @@
-export const CURRENT_APP_VERSION = import.meta.env.VITE_APP_VERSION || '1.2.6';
+export const CURRENT_APP_VERSION = import.meta.env.VITE_APP_VERSION || '1.2.10';
 export const DEFAULT_GITHUB_REPO = 'mm2ultimatehub-rgb/Zuno-note';
 
 const APK_CONFIG_KEY = 'zuno_note_apk_config_v1';
@@ -113,9 +113,14 @@ export async function checkForApkUpdate(
             url.includes('/releases/download/')
           );
         });
+        // Release asset names are not guaranteed to use one exact casing or suffix.
+        // If GitHub's release API omits asset metadata (mobile WebView/cache/rate limit),
+        // use the stable latest-release download endpoint for our published APK name.
+        const directLatestApk = `https://github.com/${repo}/releases/latest/download/Zuno-Note-release.apk`;
+        const downloadUrl = apkAsset?.browser_download_url || (data.tag_name ? directLatestApk : '');
         const sizeMb = apkAsset?.size
           ? `${(apkAsset.size / (1024 * 1024)).toFixed(1)} MB`
-          : 'APK asset yok';
+          : (downloadUrl ? 'Boyut indirme sırasında belirlenir' : 'APK asset yok');
         return {
           version: latestVer,
           installedVersion,
@@ -128,9 +133,9 @@ export async function checkForApkUpdate(
             .map((l) => l.replace(/^[-*]\s*/, '').trim())
             .filter(Boolean)
             .slice(0, 4),
-          downloadUrl: apkAsset?.browser_download_url || '',
-          hasUpdate: Boolean(apkAsset) && compareSemver(latestVer, installedVersion) > 0,
-          isDemo: !apkAsset,
+          downloadUrl,
+          hasUpdate: Boolean(downloadUrl) && compareSemver(latestVer, installedVersion) > 0,
+          isDemo: !downloadUrl,
         };
       }
     } catch {
