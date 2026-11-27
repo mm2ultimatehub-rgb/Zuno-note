@@ -56,15 +56,15 @@ jobs:
           python3 - "$VERSION" <<'PY'
           import re, sys
           version = sys.argv[1]
-          match = re.fullmatch(r"(\\d+)\\.(\\d+)\\.(\\d+)", version)
+          match = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)", version)
           if not match:
               raise SystemExit("Tag must use semantic version format, for example v1.2.1")
           major, minor, patch = map(int, match.groups())
           code = major * 1000000 + minor * 1000 + patch
           path = "android/app/build.gradle"
           text = open(path, encoding="utf-8").read()
-          text, count_code = re.subn(r"versionCode\\s+\\d+", f"versionCode {code}", text, count=1)
-          text, count_name = re.subn(r"versionName\\s+['\\\"]([^'\\\"]*)['\\\"]", f'versionName "{version}"', text, count=1)
+          text, count_code = re.subn(r"versionCode\s+\d+", f"versionCode {code}", text, count=1)
+          text, count_name = re.subn(r"versionName\s+['\"]([^'\"]*)['\"]", f'versionName "{version}"', text, count=1)
           if count_code != 1 or count_name != 1:
               raise SystemExit("Could not safely locate versionCode/versionName in generated app/build.gradle")
           open(path, "w", encoding="utf-8").write(text)
