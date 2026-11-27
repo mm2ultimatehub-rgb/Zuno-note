@@ -184,3 +184,29 @@ jobs:
             Zuno-Note-release.apk
             Zuno-Note-release.apk.sha256
           fail_on_unmatched_files: true
+
+      - name: Publish updater manifest for Android clients
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ env.RELEASE_TAG }}
+          RELEASE_VERSION: ${{ env.RELEASE_VERSION }}
+        run: |
+          SIZE_BYTES="$(stat -c%s Zuno-Note-release.apk)"
+          PUBLISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          python3 - "$RELEASE_VERSION" "$RELEASE_TAG" "$PUBLISHED_AT" "$SIZE_BYTES" > "$RUNNER_TEMP/zuno-update.json" <<'PY'
+          import json, sys
+          version, tag, published, size = sys.argv[1:]
+          print(json.dumps({
+            "version": version,
+            "apkUrl": "https://github.com/${{ github.repository }}/releases/latest/download/Zuno-Note-release.apk",
+            "publishedAt": published,
+            "sizeBytes": int(size),
+            "notes": [f"Zuno Note {tag} yayımlandı. İmzalı APK güncellemesi."]
+          }, ensure_ascii=False, indent=2))
+          PY
+          CONTENT="$(base64 -w0 "$RUNNER_TEMP/zuno-update.json")"
+          FILE_SHA="$(gh api "repos/${{ github.repository }}/contents/public/zuno-update.json" --jq .sha)"
+          gh api --method PUT "repos/${{ github.repository }}/contents/public/zuno-update.json" \
+            -f message="chore: update APK manifest for $RELEASE_TAG" \
+            -f content="$CONTENT" \
+            -f sha="$FILE_SHA"
