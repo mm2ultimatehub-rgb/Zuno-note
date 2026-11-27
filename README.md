@@ -29,7 +29,7 @@ npm run lint
 npm run build
 ```
 
-The app is a Vite + React + TypeScript PWA. GitHub Pages deployment uses relative asset paths (`base: './'`).
+The app is built with Vite + React + TypeScript and packaged as a native Android app with Capacitor. GitHub Actions builds an installable Android debug APK on every push and exposes it as a workflow artifact. The APK is not a hosted website or a PWA install prompt.
 
 ## Important update behavior
 
