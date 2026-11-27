@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#09090c"/>
+      <stop offset=".55" stop-color="#17171e"/>
+      <stop offset="1" stop-color="#050508"/>
+    </linearGradient>
+    <linearGradient id="glass" x1=".08" y1="0" x2=".9" y2="1">
+      <stop offset="0" stop-color="#f5f3ff" stop-opacity=".25"/>
+      <stop offset=".38" stop-color="#a8a6bd" stop-opacity=".08"/>
+      <stop offset=".72" stop-color="#4c4b5d" stop-opacity=".2"/>
+      <stop offset="1" stop-color="#e8e5ff" stop-opacity=".18"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
+      <stop offset=".45" stop-color="#b9b7d2" stop-opacity=".45"/>
+      <stop offset="1" stop-color="#f5f0ff" stop-opacity=".9"/>
+    </linearGradient>
+    <linearGradient id="z" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".52" stop-color="#c9c6df"/>
+      <stop offset="1" stop-color="#77758e"/>
+    </linearGradient>
+    <linearGradient id="pen" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5c5a70"/>
+      <stop offset=".35" stop-color="#f3f1ff"/>
+      <stop offset=".65" stop-color="#aaa7c1"/>
+      <stop offset="1" stop-color="#393846"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8"/>
+      <feOffset dy="9"/>
+      <feComponentTransfer><feFuncA type="linear" slope=".55"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <path d="M-24 150C120 22 326 16 536 90L536 138C342 65 154 91-24 222Z" fill="#bdb9d8" opacity=".08"/>
+  <path d="M-30 414C116 310 352 358 540 252V328C350 430 150 399-30 486Z" fill="#aaa7c8" opacity=".1"/>
+  <rect x="42" y="42" width="428" height="428" rx="84" fill="url(#glass)" stroke="url(#edge)" stroke-width="5"/>
+  <rect x="94" y="92" width="306" height="330" rx="40" fill="#101016" fill-opacity=".62" stroke="#d9d6ef" stroke-opacity=".55" stroke-width="4"/>
+  <path d="M330 92v72c0 22 18 40 40 40h30" fill="#d8d5e9" fill-opacity=".22" stroke="#f7f5ff" stroke-opacity=".7" stroke-width="3"/>
+  <path d="M146 172h178M146 218h148M146 264h114" stroke="#c8c5dc" stroke-opacity=".32" stroke-width="13" stroke-linecap="round"/>
+  <g filter="url(#shadow)">
+    <path d="M155 145H320Q342 145 330 166L205 286H323Q344 286 333 307L312 345H153Q129 345 145 324L267 204H154Q132 204 143 183Z" fill="url(#z)" stroke="#f5f2ff" stroke-width="4" stroke-linejoin="round"/>
+  </g>
+  <g transform="translate(350 292) rotate(35)" filter="url(#shadow)">
+    <rect x="-22" y="-112" width="44" height="174" rx="16" fill="url(#pen)" stroke="#f2efff" stroke-width="3"/>
+    <rect x="-22" y="-92" width="44" height="20" rx="7" fill="#dedbee" fill-opacity=".65"/>
+    <path d="M-22 62H22L0 112Z" fill="#d7d4e8" stroke="#f8f6ff" stroke-width="2"/>
+    <path d="M-8 91H8L0 112Z" fill="#292833"/>
+    <rect x="-25" y="-113" width="50" height="13" rx="6" fill="#f6f3ff"/>
+  </g>
+  <path d="M63 355C80 443 208 461 346 421C426 398 456 344 459 285" fill="none" stroke="#e7e4fa" stroke-opacity=".62" stroke-width="5" stroke-linecap="round"/>
+  <path d="M66 353C48 277 75 204 135 150" fill="none" stroke="#aaa6c5" stroke-opacity=".42" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="106" cy="124" r="4" fill="#fff" opacity=".75"/>
+  <circle cx="414" cy="380" r="3" fill="#fff" opacity=".65"/>
+</svg>
