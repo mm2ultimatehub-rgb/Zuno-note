@@ -589,34 +589,62 @@ export default function App() {
         return;
       }
 
-      if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
-        const mediaType: 'image' | 'video' = file.type.startsWith('video/')
-          ? 'video'
-          : 'image';
-        const dataUrl =
-          mediaType === 'image'
-            ? await optimizeImageDataUrl(file)
-            : await readFileAsDataUrl(file);
-        const dims = await detectMediaDimensions(dataUrl, mediaType);
-        const created = createNewNoteObject({
-          title: file.name.replace(/\.[^/.]+$/, ''),
-          attachments: [{
-            id: `${mediaType === 'video' ? 'vid' : 'img'}_${Date.now()}`,
-            name: file.name,
-            mediaType,
-            dataUrl,
-            x: 64,
-            y: 180,
-            width: dims.width,
-            height: dims.height,
-            aspectRatio: dims.aspectRatio,
-            createdAt: Date.now(),
-          }],
-        });
-        setNotes((prev) => [created, ...prev]);
-        setActiveNoteId(created.id);
-        await saveNote(created);
-        setImportNotice('Medya yeni bir nota eklendi.');
+      if (file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/')) {
+        const dataUrl = file.type.startsWith('image/')
+          ? await optimizeImageDataUrl(file)
+          : await readFileAsDataUrl(file);
+        const createdAt = Date.now();
+        const title = file.name.replace(/\.[^/.]+$/, '');
+
+        if (file.type.startsWith('audio/')) {
+          const durationSec = await new Promise<number>((resolve) => {
+            const audio = new Audio();
+            const timeout = window.setTimeout(() => resolve(0), 2500);
+            const finish = (duration: number) => {
+              window.clearTimeout(timeout);
+              resolve(Number.isFinite(duration) ? Math.max(0, Math.round(duration)) : 0);
+            };
+            audio.onloadedmetadata = () => finish(audio.duration);
+            audio.onerror = () => finish(0);
+            audio.src = dataUrl;
+          });
+          const created = createNewNoteObject({
+            title,
+            voiceNotes: [{
+              id: `voice_${createdAt}`,
+              name: file.name,
+              dataUrl,
+              durationSec,
+              createdAt,
+            }],
+          });
+          setNotes((prev) => [created, ...prev]);
+          setActiveNoteId(created.id);
+          await saveNote(created);
+          setImportNotice('Ses dosyası yeni nota eklendi.');
+        } else {
+          const mediaType: 'image' | 'video' = file.type.startsWith('video/') ? 'video' : 'image';
+          const dims = await detectMediaDimensions(dataUrl, mediaType);
+          const created = createNewNoteObject({
+            title,
+            attachments: [{
+              id: `${mediaType === 'video' ? 'vid' : 'img'}_${createdAt}`,
+              name: file.name,
+              mediaType,
+              dataUrl,
+              x: 64,
+              y: 180,
+              width: dims.width,
+              height: dims.height,
+              aspectRatio: dims.aspectRatio,
+              createdAt,
+            }],
+          });
+          setNotes((prev) => [created, ...prev]);
+          setActiveNoteId(created.id);
+          await saveNote(created);
+          setImportNotice('Görsel veya video yeni bir nota eklendi.');
+        }
       } else {
         const text = await file.text();
         if (file.name.toLowerCase().endsWith('.json')) {
@@ -691,7 +719,7 @@ export default function App() {
       <input
         ref={fileImportRef}
         type="file"
-        accept=".txt,.md,.json,image/*,video/*"
+        accept=".txt,.md,.json,image/*,video/*,audio/*"
         onChange={handleImportTextOrImage}
         className="hidden"
       />
