@@ -1,4 +1,5 @@
-export const CURRENT_APP_VERSION = '1.2.0';
+export const CURRENT_APP_VERSION = '1.2.1';
+export const DEFAULT_GITHUB_REPO = 'mm2ultimatehub-rgb/Zuno-note';
 
 const APK_CONFIG_KEY = 'zuno_note_apk_config_v1';
 const LEGACY_APK_CONFIG_KEY = 'karanot_apk_config_v1';
@@ -24,7 +25,7 @@ export function loadApkConfig(): ApkUpdateConfig {
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<ApkUpdateConfig>;
       const config = {
-        githubRepo: parsed.githubRepo || '',
+        githubRepo: parsed.githubRepo || DEFAULT_GITHUB_REPO,
         directApkUrl: parsed.directApkUrl || '',
       };
       localStorage.setItem(APK_CONFIG_KEY, JSON.stringify(config));
@@ -33,7 +34,7 @@ export function loadApkConfig(): ApkUpdateConfig {
   } catch {
     // Ignore storage error
   }
-  return { githubRepo: '', directApkUrl: '' };
+  return { githubRepo: DEFAULT_GITHUB_REPO, directApkUrl: '' };
 }
 
 export function saveApkConfig(cfg: ApkUpdateConfig): void {
@@ -58,7 +59,7 @@ function compareSemver(a: string, b: string): number {
 export async function checkForApkUpdate(
   cfg: ApkUpdateConfig
 ): Promise<ApkReleaseInfo> {
-  const repo = cfg.githubRepo.trim();
+  const repo = (cfg.githubRepo || DEFAULT_GITHUB_REPO).trim();
 
   if (repo && repo.includes('/') && !repo.startsWith('demo')) {
     try {
@@ -76,7 +77,8 @@ export async function checkForApkUpdate(
         };
         const latestVer = (data.tag_name || CURRENT_APP_VERSION).replace(/^v/i, '');
         const apkAsset = data.assets?.find((a) =>
-          a.name.toLowerCase().endsWith('.apk')
+          a.name.toLowerCase().endsWith('.apk') &&
+          a.browser_download_url.startsWith('https://github.com/')
         );
         const sizeMb = apkAsset?.size
           ? `${(apkAsset.size / (1024 * 1024)).toFixed(1)} MB`
@@ -92,9 +94,9 @@ export async function checkForApkUpdate(
             .map((l) => l.replace(/^[-*]\s*/, '').trim())
             .filter(Boolean)
             .slice(0, 4),
-          downloadUrl: apkAsset?.browser_download_url || cfg.directApkUrl.trim() || '',
+          downloadUrl: apkAsset?.browser_download_url || '',
           hasUpdate: compareSemver(latestVer, CURRENT_APP_VERSION) > 0,
-          isDemo: false,
+          isDemo: !apkAsset,
         };
       }
     } catch {
@@ -110,10 +112,10 @@ export async function checkForApkUpdate(
     notes: [
       repo
         ? 'GitHub deposuna erişilemedi veya bir Releases sürümü yayımlanmamış.'
-        : 'Gerçek güncelleme kontrolü için GitHub kullanıcı/repo bilgisi ya da doğrudan APK bağlantısı ekleyin.',
+        : 'GitHub Releases kaynağı ayarlanmadı. Zuno Note resmi deposu varsayılan olarak kullanılır.',
       'Zuno Note sahte sürüm veya APK dosyası oluşturmaz.',
     ],
-    downloadUrl: cfg.directApkUrl.trim(),
+    downloadUrl: '',
     hasUpdate: false,
     isDemo: true,
   };
