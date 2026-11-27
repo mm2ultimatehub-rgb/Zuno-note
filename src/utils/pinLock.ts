@@ -30,7 +30,7 @@ async function legacySha256(pin: string): Promise<string> {
 async function derivePin(pin: string, salt: Uint8Array, iterations: number): Promise<string> {
   if (!crypto?.subtle) throw new Error('Bu cihazda güvenli PIN koruması desteklenmiyor.');
   const material = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin.trim()), 'PBKDF2', false, ['deriveBits']);
-  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations, hash: 'SHA-256' }, material, 256);
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: salt.buffer as ArrayBuffer, iterations, hash: 'SHA-256' }, material, 256);
   return bytesToHex(new Uint8Array(bits));
 }
 
