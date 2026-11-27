@@ -90,7 +90,7 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
     const a = document.createElement('a');
     a.href = url;
     const dateStr = new Date().toISOString().slice(0, 10);
-    a.download = `karanot-yedek-${dateStr}.json`;
+    a.download = `zuno-note-yedek-${dateStr}.json`;
     a.click();
     URL.revokeObjectURL(url);
     setStatusMessage('Tüm notlar JSON olarak indirildi.');
@@ -129,30 +129,14 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
     if (releaseInfo.downloadUrl.startsWith('http')) {
       const a = document.createElement('a');
       a.href = releaseInfo.downloadUrl;
-      a.download = `Karanot-v${releaseInfo.version}.apk`;
+      a.download = `Zuno-Note-v${releaseInfo.version}.apk`;
       a.rel = 'noopener noreferrer';
       a.click();
       setApkStatus('APK indirmesi başlatıldı. İndirilen dosyayı açarak güncelleyebilirsiniz.');
       return;
     }
 
-    // Demo manifest download when using demo mode
-    const demoSummary = [
-      `Karanot Android APK Güncelleme Paketi (DEMO)`,
-      `Hedef Sürüm: v${releaseInfo.version}`,
-      `Mevcut Sürüm: v${CURRENT_APP_VERSION}`,
-      ``,
-      `Gerçek APK güncellemesi için yukarıdaki "GitHub Repo" alanına kendi`,
-      `kullanici/repo adresinizi yazın veya doğrudan APK URL'si girin.`,
-    ].join('\n');
-    const blob = new Blob([demoSummary], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Karanot-${releaseInfo.version}-DEMO-BILGI.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-    setApkStatus('Demo güncelleme paketi indirildi. Gerçek APK için GitHub Repo eklemeniz yeterli.');
+    setApkStatus('Gerçek bir APK bağlantısı bulunamadı. GitHub Releases bölümüne APK yükleyin veya doğrudan APK bağlantısı ekleyin.');
   };
 
   return (
@@ -214,8 +198,8 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
                   APK Yükleme & Güncelleme
                 </span>
               </div>
-              <span className="px-2 py-0.5 rounded-full bg-[#0b1214] border border-[#1b2c2e] text-[10px] font-medium text-[#ffb454]">
-                Demo / Ayarlanabilir
+              <span className="px-2 py-0.5 rounded-full bg-[#0b1214] border border-[#1b2c2e] text-[10px] font-medium text-[#84a0a0]">
+                GitHub Releases
               </span>
             </div>
 
@@ -228,7 +212,7 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
                   setApkConfig(next);
                   saveApkConfig(next);
                 }}
-                placeholder="GitHub Repo (örn: kullanici/karanot — boşsa demo)"
+                placeholder="GitHub Repo (örn: mm2ultimatehub-rgb/Zuno-note — boşsa demo)"
                 className="w-full rounded-xl bg-[#0b1214] border border-[#1b2c2e] px-3 py-2 text-xs text-[#e6f2f2] placeholder:text-[#84a0a0]/70 focus:outline-none focus:border-[var(--accent)]"
               />
               <input
@@ -283,9 +267,9 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
                 >
                   <Download className="w-4 h-4" />
                   <span>
-                    {releaseInfo.isDemo
-                      ? 'Demo APK Paketini İndir'
-                      : `v${releaseInfo.version} APK İndir & Kur`}
+                    {releaseInfo.downloadUrl
+                      ? `v${releaseInfo.version} APK İndir`
+                      : 'APK bağlantısı yok'}
                   </span>
                 </button>
               </div>
