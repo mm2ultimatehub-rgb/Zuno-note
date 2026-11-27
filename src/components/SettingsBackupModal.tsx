@@ -136,8 +136,17 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
           setStatusMessage('Yedek dosyası geçersiz veya desteklenmeyen sürümde. Notlarınız değiştirilmedi.');
           return;
         }
+        const noteCount = parsed.notes.length;
+        const folderCount = parsed.folders.length;
+        const confirmed = window.confirm(
+          `Bu yedek ${noteCount} not ve ${folderCount} klasör içeriyor. Mevcut not ve klasörlerin tamamen değiştirilecek. Önce güncel yedeğini aldığından emin ol. Devam edilsin mi?`
+        );
+        if (!confirmed) {
+          setStatusMessage('Geri yükleme iptal edildi. Mevcut notların korundu.');
+          return;
+        }
         await onImportBackup(parsed as AppBackupData);
-        setStatusMessage(`${parsed.notes?.length ?? 0} not başarıyla geri yüklendi.`);
+        setStatusMessage(`${noteCount} not ve ${folderCount} klasör başarıyla geri yüklendi.`);
       } catch {
         setStatusMessage('Yedek dosyası okunamadı.');
       }
