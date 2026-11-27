@@ -136,8 +136,8 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
           setStatusMessage('Yedek dosyası geçersiz veya desteklenmeyen sürümde. Notlarınız değiştirilmedi.');
           return;
         }
-        const noteCount = parsed.notes.length;
-        const folderCount = parsed.folders.length;
+        const noteCount = parsed.notes?.length ?? 0;
+        const folderCount = parsed.folders?.length ?? 0;
         const confirmed = window.confirm(
           `Bu yedek ${noteCount} not ve ${folderCount} klasör içeriyor. Mevcut not ve klasörlerin tamamen değiştirilecek. Önce güncel yedeğini aldığından emin ol. Devam edilsin mi?`
         );
