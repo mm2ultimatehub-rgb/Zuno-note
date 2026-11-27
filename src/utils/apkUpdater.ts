@@ -109,7 +109,10 @@ export async function checkForApkUpdate(
   cfg: ApkUpdateConfig
 ): Promise<ApkReleaseInfo> {
   const installedVersion = await getInstalledVersion();
-  const repo = DEFAULT_GITHUB_REPO;\n\n  const publishedManifest = await checkPublishedManifest(installedVersion);\n  if (publishedManifest) return publishedManifest;
+  const repo = DEFAULT_GITHUB_REPO;
+
+  const publishedManifest = await checkPublishedManifest(installedVersion);
+  if (publishedManifest) return publishedManifest;
 
   // Accept only a GitHub owner/repository slug; reject full URLs and path fragments.
   if (/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo) && !repo.toLowerCase().startsWith('demo/')) {
