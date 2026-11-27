@@ -19,7 +19,6 @@ import {
   CURRENT_APP_VERSION,
   DEFAULT_GITHUB_REPO,
   loadApkConfig,
-  saveApkConfig,
 } from '../utils/apkUpdater';
 import { useExpressive } from './expressive/shapes';
 import { flushPendingSaves, getStorageEstimate } from '../db/localDb';
@@ -50,7 +49,7 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  const [apkConfig, setApkConfig] = useState(() => loadApkConfig());
+  const apkConfig = loadApkConfig();
   const [releaseInfo, setReleaseInfo] = useState<ApkReleaseInfo | null>(null);
   const [apkStatus, setApkStatus] = useState<string | null>(null);
   const [isCheckingApk, setIsCheckingApk] = useState(false);
@@ -156,7 +155,6 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
   };
 
   const handleCheckUpdate = async () => {
-    saveApkConfig(apkConfig);
     setApkStatus(null);
     setIsCheckingApk(true);
     try {
@@ -175,13 +173,16 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
       setApkStatus(`Zuno Note v${releaseInfo.installedVersion} zaten güncel. Aynı sürüm tekrar indirilmedi.`);
       return;
     }
-    if (releaseInfo.downloadUrl.startsWith('http')) {
+    if (releaseInfo.downloadUrl.startsWith('https://github.com/') && releaseInfo.downloadUrl.includes('/releases/')) {
+      // GitHub Release downloads redirect to the signed APK asset. Let Android's
+      // download handler/browser receive the file; Android requires user approval
+      // on the package installer before replacing an installed app.
       const a = document.createElement('a');
       a.href = releaseInfo.downloadUrl;
-      a.download = `Zuno-Note-v${releaseInfo.version}.apk`;
+      a.target = '_blank';
       a.rel = 'noopener noreferrer';
       a.click();
-      setApkStatus('İndirme başlatıldı. İndirilen Zuno Note APK dosyasını açıp Android kurulum ekranında Güncelle seçeneğine dokun.');
+      setApkStatus('APK indirme açıldı. İndirme tamamlanınca bildirime veya Dosyalar > İndirilenler bölümüne dokun; Android kurulum ekranında Güncelle seçeneğini onayla.');
       return;
     }
 
@@ -252,22 +253,17 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
               </span>
             </div>
 
-            <div className="space-y-2">
-              <input
-                type="text"
-                value={apkConfig.githubRepo}
-                onChange={(e) => {
-                  const next = { ...apkConfig, githubRepo: e.target.value };
-                  setApkConfig(next);
-                  saveApkConfig(next);
-                }}
-                placeholder={`GitHub deposu (varsayılan: ${DEFAULT_GITHUB_REPO})`}
-                className="w-full rounded-xl bg-[#0b1214] border border-[#1b2c2e] px-3 py-2 text-xs text-[#e6f2f2] placeholder:text-[#84a0a0]/70 focus:outline-none focus:border-[var(--accent)]"
-              />
+            <div className="flex items-center gap-2 rounded-xl bg-[#0b1214] border border-[#1b2c2e] px-3 py-2.5">
+              <Github className="w-4 h-4 text-[var(--accent)] shrink-0" />
+              <div className="min-w-0">
+                <p className="text-[10px] text-[#84a0a0]">Bağlı resmi depo</p>
+                <p className="text-xs font-medium text-[#e6f2f2] truncate">{DEFAULT_GITHUB_REPO}</p>
+              </div>
+              <span className="ml-auto text-[10px] text-[#84a0a0]">Otomatik</span>
             </div>
 
             <LoadingActionButton
-              label={isCheckingApk ? 'GitHub Releases kontrol ediliyor…' : 'Güncellemeleri Kontrol Et'}
+              label={isCheckingApk ? 'Dalga güncelleme kontrolü…' : 'Güncellemeyi Kontrol Et'}
               onAction={handleCheckUpdate}
               height={60}
             />
