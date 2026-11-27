@@ -102,22 +102,41 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
     const dateStr = new Date().toISOString().slice(0, 10);
     a.download = `zuno-note-yedek-${dateStr}.json`;
     a.click();
-    URL.revokeObjectURL(url);
+    // Android WebView may start the download asynchronously; revoking in the
+    // same task can invalidate the Blob before the download manager reads it.
+    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
     setStatusMessage('Tüm notlar JSON olarak indirildi.');
   };
 
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 100 * 1024 * 1024) {
+      setStatusMessage('Yedek dosyası çok büyük (en fazla 100 MB).');
+      e.target.value = '';
+      return;
+    }
     const reader = new FileReader();
+    reader.onerror = () => setStatusMessage('Yedek dosyası okunamadı. Dosyanın sağlam olduğunu kontrol et.');
     reader.onload = async () => {
       try {
-        const parsed = JSON.parse(String(reader.result)) as AppBackupData;
-        if (!Array.isArray(parsed.notes)) {
-          setStatusMessage('Geçersiz yedek dosyası biçimi.');
+        const parsed = JSON.parse(String(reader.result)) as Partial<AppBackupData>;
+        const validNotes = Array.isArray(parsed.notes) && parsed.notes.every((note) =>
+          note && typeof note === 'object' &&
+          typeof note.id === 'string' && note.id.length > 0 &&
+          typeof note.title === 'string' && typeof note.content === 'string' &&
+          typeof note.createdAt === 'number' && typeof note.updatedAt === 'number'
+        );
+        const validFolders = Array.isArray(parsed.folders) && parsed.folders.every((folder) =>
+          folder && typeof folder === 'object' &&
+          typeof folder.id === 'string' && folder.id.length > 0 &&
+          typeof folder.name === 'string'
+        );
+        if (parsed.version !== 1 || !validNotes || !validFolders) {
+          setStatusMessage('Yedek dosyası geçersiz veya desteklenmeyen sürümde. Notlarınız değiştirilmedi.');
           return;
         }
-        await onImportBackup(parsed);
+        await onImportBackup(parsed as AppBackupData);
         setStatusMessage(`${parsed.notes.length} not başarıyla geri yüklendi.`);
       } catch {
         setStatusMessage('Yedek dosyası okunamadı.');
