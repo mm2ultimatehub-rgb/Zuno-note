@@ -1,0 +1,416 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Yumuşak Yükleyici</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: üstte başlık + Ayarlar, ortada koyu daire kap içinde dönen düz 2D şekil, altında ad ve noktalar.
+   Videodaki Material tarzı: koyu turkuaz kap, açık turkuaz şekil, yumuşak köşeler, dönerken akıcı dönüşüm. */
+:root{
+  --bg:#0b1214;
+  --fg:#e6f2f2;
+  --muted:#84a0a0;
+  --line:#1b2c2e;
+  --panel:rgba(14,24,26,.94);
+  --panel-line:rgba(255,255,255,.14);
+  --accent:#a3f0f0;
+  --font-display:'Space Grotesk',system-ui,sans-serif;
+  --font-body:'Inter',system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{height:100%}
+body{
+  margin:0;min-height:100%;
+  background:var(--bg);color:var(--fg);
+  font-family:var(--font-body);
+  padding-block:20px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;align-items:center;justify-content:center;
+}
+.wrap{position:relative;width:100%;max-width:440px;display:flex;flex-direction:column;align-items:center;gap:18px;min-width:0}
+.bar{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.title{font-family:var(--font-display);font-weight:600;font-size:1rem;letter-spacing:.02em;color:var(--muted)}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.gear{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--panel-line);font-size:.85rem}
+.gear[aria-expanded="true"]{background:rgba(255,255,255,.14)}
+
+.stage{position:relative;width:100%;aspect-ratio:1/1}
+.stage canvas{display:block;width:100%;height:100%}
+.label{font-family:var(--font-display);font-size:1.5rem;font-weight:600;min-height:1.3em;text-align:center}
+.status{display:flex;align-items:center;gap:10px;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.dots{display:flex;gap:8px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--line);transition:background .3s,transform .3s}
+.dot.on{background:var(--accent);transform:scale(1.35)}
+
+.panel{
+  position:absolute;top:46px;right:0;z-index:10;
+  width:min(100%,350px);padding:16px;border-radius:18px;
+  background:var(--panel);border:1px solid var(--panel-line);
+  box-shadow:0 18px 50px rgba(0,0,0,.5);
+  display:flex;flex-direction:column;gap:16px;
+}
+.panel[hidden]{display:none}
+.row{display:flex;flex-direction:column;gap:8px}
+.row>.name{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.seg{display:flex;padding:3px;border-radius:12px;background:rgba(255,255,255,.06);gap:3px}
+.seg button{flex:1;padding:8px 10px;border:0;border-radius:9px;background:transparent;font-size:.9rem;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:rgba(255,255,255,.16);color:var(--fg)}
+.swatches{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.sw{width:30px;height:30px;border-radius:50%;border:2px solid transparent;padding:0;background:var(--c)}
+.sw[aria-pressed="true"]{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.25)}
+.custom{display:inline-flex;align-items:center;gap:8px;font-size:.82rem;color:var(--muted)}
+.custom input{width:34px;height:30px;padding:0;border:1px solid var(--panel-line);border-radius:8px;background:transparent}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:7px 12px;border-radius:999px;border:1px solid var(--panel-line);background:transparent;font-size:.85rem;color:var(--muted)}
+.chip[aria-pressed="true"]{background:rgba(255,255,255,.16);color:var(--fg);border-color:rgba(255,255,255,.3)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+
+<div class="wrap">
+  <div class="bar">
+    <span class="title">Yumuşak Yükleyici</span>
+    <button class="gear" id="gear" type="button" aria-expanded="false" aria-controls="panel">⚙ Ayarlar</button>
+  </div>
+
+  <div class="panel" id="panel" hidden>
+    <div class="row">
+      <span class="name">Şekiller</span>
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="row">
+      <span class="name">Malzeme</span>
+      <div class="seg" data-key="glass">
+        <button type="button" data-val="0" aria-pressed="true">Düz</button>
+        <button type="button" data-val="1" aria-pressed="false">Sıvı cam</button>
+      </div>
+    </div>
+    <div class="row">
+      <span class="name">Daire kap</span>
+      <div class="seg" data-key="container">
+        <button type="button" data-val="1" aria-pressed="true">Var</button>
+        <button type="button" data-val="0" aria-pressed="false">Yok</button>
+      </div>
+    </div>
+    <div class="row">
+      <span class="name">Renk</span>
+      <div class="swatches" id="swatches">
+        <button type="button" class="sw" data-c="#a3f0f0" style="--c:#a3f0f0" aria-label="Turkuaz" aria-pressed="true"></button>
+        <button type="button" class="sw" data-c="#ffb454" style="--c:#ffb454" aria-label="Turuncu" aria-pressed="false"></button>
+        <button type="button" class="sw" data-c="#ff9db8" style="--c:#ff9db8" aria-label="Pembe" aria-pressed="false"></button>
+        <button type="button" class="sw" data-c="#9ccaff" style="--c:#9ccaff" aria-label="Mavi" aria-pressed="false"></button>
+        <button type="button" class="sw" data-c="#a6f0a6" style="--c:#a6f0a6" aria-label="Yeşil" aria-pressed="false"></button>
+        <button type="button" class="sw" data-c="#cdb4ff" style="--c:#cdb4ff" aria-label="Mor" aria-pressed="false"></button>
+      </div>
+      <label class="custom" for="custom">Kendi rengin <input type="color" id="custom" value="#ffd166"></label>
+    </div>
+    <div class="row">
+      <span class="name">Hız</span>
+      <input type="range" id="speed" min="0.4" max="2" step="0.1" value="1" aria-label="Animasyon hızı">
+    </div>
+  </div>
+
+  <div class="stage" id="stage">
+    <canvas id="cv"></canvas>
+  </div>
+  <div class="label" id="label">Yumuşak yıldız</div>
+  <div class="status">
+    <span>Yükleniyor</span>
+    <span class="dots" id="dots"></span>
+  </div>
+</div>
+
+<script>
+(function(){
+  var N=180, TAU=Math.PI*2;
+  var stage=document.getElementById('stage');
+  var cv=document.getElementById('cv');
+  var ctx=cv.getContext('2d');
+  var labelEl=document.getElementById('label');
+  var dotsEl=document.getElementById('dots');
+  var panel=document.getElementById('panel');
+  var gear=document.getElementById('gear');
+  var chipsEl=document.getElementById('chips');
+
+  // ---- Şekil tanımları: her şekil, açıya göre yarıçap dizisi (N örnek) ----
+  function smooth(arr,sigma){
+    if(sigma<0.1)return arr;
+    var rad=Math.ceil(3*sigma),w=[],sum=0,d;
+    for(d=-rad;d<=rad;d++){var v=Math.exp(-d*d/(2*sigma*sigma));w.push(v);sum+=v;}
+    var out=new Float32Array(N);
+    for(var i=0;i<N;i++){
+      var a=0;
+      for(d=-rad;d<=rad;d++){a+=arr[((i+d)%N+N)%N]*w[d+rad];}
+      out[i]=a/sum;
+    }
+    return out;
+  }
+  function polyR(n,t,off){
+    var tp=t+Math.PI/2+(off||0),seg=TAU/n;
+    var phi=(((tp%seg)+seg)%seg)-seg/2;
+    return Math.cos(Math.PI/n)/Math.cos(phi);
+  }
+  function build(fn,sigma,mean){
+    var a=new Float32Array(N),i,sum=0;
+    for(i=0;i<N;i++){a[i]=fn(i/N*TAU);}
+    a=smooth(a,sigma);
+    for(i=0;i<N;i++)sum+=a[i];
+    var k=mean/(sum/N);
+    for(i=0;i<N;i++)a[i]*=k;
+    return a;
+  }
+  var DEFS=[
+    {id:'burst',name:'Yumuşak yıldız',r:build(function(t){return 1+0.1*Math.cos(10*t);},0,0.92)},
+    {id:'hex',name:'Altıgen',r:build(function(t){return polyR(6,t,0);},4.5,0.92)},
+    {id:'pent',name:'Beşgen',r:build(function(t){return polyR(5,t,0);},5.5,0.92)},
+    {id:'sq',name:'Kare',r:build(function(t){return polyR(4,t,Math.PI/4);},5.5,0.92)},
+    {id:'tri',name:'Üçgen',r:build(function(t){return polyR(3,t,0);},7,0.88)},
+    {id:'pill',name:'Hap',r:build(function(t){
+      var a=0.74,b=1,p=3.2,c=Math.abs(Math.cos(t))/a,s=Math.abs(Math.sin(t))/b;
+      return Math.pow(Math.pow(c,p)+Math.pow(s,p),-1/p);
+    },0,0.88)},
+    {id:'sun',name:'Güneş',r:build(function(t){return 1+0.14*Math.cos(8*t);},0,0.92)}
+  ];
+
+  // ---- Ayarlar ----
+  var state={on:['burst','pent','pill','sun'],glass:false,container:true,color:'#a3f0f0',speed:1};
+  try{var saved=JSON.parse(localStorage.getItem('yumusak-ayar')||'null');if(saved){for(var k in state){if(k in saved)state[k]=saved[k];}}}catch(e){}
+  function save(){try{localStorage.setItem('yumusak-ayar',JSON.stringify(state));}catch(e){}}
+
+  DEFS.forEach(function(d){
+    var b=document.createElement('button');
+    b.type='button';b.className='chip';b.textContent=d.name;b.setAttribute('data-id',d.id);
+    chipsEl.appendChild(b);
+  });
+
+  function active(){
+    var l=DEFS.filter(function(d){return state.on.indexOf(d.id)>=0;});
+    return l.length?l:[DEFS[0]];
+  }
+
+  function syncUI(){
+    [].forEach.call(document.querySelectorAll('.seg'),function(seg){
+      var key=seg.getAttribute('data-key');
+      var cur=key==='glass'?(state.glass?'1':'0'):(state.container?'1':'0');
+      [].forEach.call(seg.children,function(b){b.setAttribute('aria-pressed',String(b.getAttribute('data-val')===cur));});
+    });
+    [].forEach.call(document.querySelectorAll('.sw'),function(b){
+      b.setAttribute('aria-pressed',String(b.getAttribute('data-c')===state.color));
+    });
+    [].forEach.call(chipsEl.children,function(b){
+      b.setAttribute('aria-pressed',String(state.on.indexOf(b.getAttribute('data-id'))>=0));
+    });
+    document.getElementById('speed').value=String(state.speed);
+    var n=active().length;
+    dotsEl.innerHTML='';
+    for(var i=0;i<n;i++){var d=document.createElement('i');d.className='dot';dotsEl.appendChild(d);}
+    labelEl.dataset.i='';
+    setAccent();
+  }
+
+  function hexToRgb(h){
+    h=String(h).replace('#','');
+    if(h.length===3)h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+    var n=parseInt(h,16);
+    return [(n>>16)&255,(n>>8)&255,n&255];
+  }
+  function rgbToHsl(r,g,b){
+    r/=255;g/=255;b/=255;
+    var mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2,h=0,s=0,d=mx-mn;
+    if(d){
+      s=l>0.5?d/(2-mx-mn):d/(mx+mn);
+      if(mx===r)h=((g-b)/d+(g<b?6:0));else if(mx===g)h=(b-r)/d+2;else h=(r-g)/d+4;
+      h*=60;
+    }
+    return [h,s*100,l*100];
+  }
+  var shapeRgb,boxCss;
+  function setAccent(){
+    shapeRgb=hexToRgb(state.color);
+    var hsl=rgbToHsl(shapeRgb[0],shapeRgb[1],shapeRgb[2]);
+    // Kap: aynı tonun koyu hali
+    boxCss='hsl('+Math.round(hsl[0])+','+Math.round(Math.min(100,hsl[1]*1.35))+'%,16%)';
+    document.documentElement.style.setProperty('--accent',state.color);
+  }
+
+  gear.addEventListener('click',function(){
+    var open=panel.hidden;panel.hidden=!open;gear.setAttribute('aria-expanded',String(open));
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&!panel.hidden){panel.hidden=true;gear.setAttribute('aria-expanded','false');gear.focus();}
+  });
+  [].forEach.call(document.querySelectorAll('.seg'),function(seg){
+    seg.addEventListener('click',function(e){
+      var b=e.target.closest('button');if(!b)return;
+      var on=b.getAttribute('data-val')==='1';
+      if(seg.getAttribute('data-key')==='glass')state.glass=on;else state.container=on;
+      save();syncUI();
+    });
+  });
+  document.getElementById('swatches').addEventListener('click',function(e){
+    var b=e.target.closest('.sw');if(!b)return;
+    state.color=b.getAttribute('data-c');save();syncUI();
+  });
+  document.getElementById('custom').addEventListener('input',function(e){
+    state.color=e.target.value;save();syncUI();
+  });
+  document.getElementById('speed').addEventListener('input',function(e){
+    state.speed=parseFloat(e.target.value)||1;save();
+  });
+  chipsEl.addEventListener('click',function(e){
+    var b=e.target.closest('.chip');if(!b)return;
+    var id=b.getAttribute('data-id'),at=state.on.indexOf(id);
+    if(at>=0){if(state.on.length<=2)return;state.on.splice(at,1);}
+    else state.on.push(id);
+    save();syncUI();
+  });
+  syncUI();
+
+  // ---- Çizim ----
+  // Telefonu yormamak için: çözünürlük sınırlı, filtre ve bulanık gölge yok, arka plan küçük bir tuvalde çiziliyor.
+  var size=300,dpr=1;
+  var BGS=128;                       // arka plan sahnesi 128x128 piksel, ekrana büyütülerek basılır
+  var bg=document.createElement('canvas');bg.width=BGS;bg.height=BGS;
+  var bctx=bg.getContext('2d');
+  function resize(){
+    size=stage.clientWidth||300;
+    dpr=Math.min(window.devicePixelRatio||1,1.5);
+    cv.width=Math.round(size*dpr);cv.height=Math.round(size*dpr);
+  }
+  window.addEventListener('resize',resize);
+  resize();
+
+  // Sıvı camın kırdığı arka plan: hareketli renk lekeleri ve nokta ızgarası
+  function drawScene(t,c){
+    var h=BGS/2,Rc=BGS*0.46;
+    bctx.globalCompositeOperation='source-over';
+    bctx.fillStyle='#0b1214';bctx.fillRect(0,0,BGS,BGS);
+    var blobs=[[0.5,0.4,0.5,0.7,0,0.65,c],[0.55,0.5,0.4,0.55,2,0.55,[111,140,255]],[0.45,0.55,0.6,0.35,4,0.5,[255,107,214]]];
+    for(var i=0;i<3;i++){
+      var o=blobs[i],col=o[6];
+      var x=h+Rc*o[0]*Math.cos(t*o[2]+o[4]),y=h+Rc*o[1]*Math.sin(t*o[3]+o[4]+1),r=Rc*o[5];
+      var g=bctx.createRadialGradient(x,y,0,x,y,r);
+      g.addColorStop(0,'rgba('+col[0]+','+col[1]+','+col[2]+',0.95)');
+      g.addColorStop(1,'rgba('+col[0]+','+col[1]+','+col[2]+',0)');
+      bctx.fillStyle=g;bctx.fillRect(0,0,BGS,BGS);
+    }
+    bctx.fillStyle='rgba(255,255,255,0.32)';
+    var sp=BGS/9;
+    for(var gx=sp/2;gx<BGS;gx+=sp){for(var gy=sp/2;gy<BGS;gy+=sp){bctx.fillRect(gx-1,gy-1,2,2);}}
+  }
+
+  function ease(x){ // hafif yaylanan çıkış
+    var c1=1.1,c3=c1+1;
+    return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2);
+  }
+  var STEP=0.8, MOVE=0.55;
+  var acc=0,lastNow=performance.now();
+
+  function frame(){
+    var now=performance.now();
+    var dt=Math.min((now-lastNow)/1000,0.1);
+    lastNow=now;
+    acc+=dt*state.speed;
+
+    var list=active(),L=list.length;
+    var stepIdx=Math.floor(acc/STEP),local=acc-stepIdx*STEP;
+    var s=local<MOVE?ease(local/MOVE):1;
+    var A=list[stepIdx%L].r,B=list[(stepIdx+1)%L].r;
+    var cur=local<MOVE*0.5?stepIdx%L:(stepIdx+1)%L;
+    if(labelEl.dataset.i!==String(cur)+':'+L){
+      labelEl.dataset.i=String(cur)+':'+L;
+      labelEl.textContent=list[cur].name;
+      [].forEach.call(dotsEl.children,function(d,n){d.classList.toggle('on',n===cur);});
+    }
+    var rot=acc*0.9+(stepIdx+Math.min(s,1.0))*0.55;
+
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,size,size);
+    var cx=size/2,cy=size/2,Rc=size*0.46,Rs=Rc*0.7;
+    var c=shapeRgb;
+
+    // Şekil yolu bir kez kurulur, her yerde yeniden kullanılır
+    var path=new Path2D();
+    for(var i=0;i<N;i++){
+      var r=A[i]+(B[i]-A[i])*s,a=i/N*TAU+rot;
+      var x=cx+Math.cos(a)*Rs*r,y=cy+Math.sin(a)*Rs*r;
+      if(i===0)path.moveTo(x,y);else path.lineTo(x,y);
+    }
+    path.closePath();
+    var disc=new Path2D();disc.arc(cx,cy,Rc,0,TAU);
+
+    function scaleAbout(k){ctx.translate(cx,cy);ctx.scale(k,k);ctx.translate(-cx,-cy);}
+    function rim(p,lw,rad,strong){
+      ctx.save();ctx.clip(p);
+      ctx.lineWidth=lw*5;ctx.strokeStyle='rgba(255,255,255,'+(0.07*strong)+')';ctx.stroke(p);
+      ctx.lineWidth=lw*2.6;ctx.strokeStyle='rgba(255,255,255,'+(0.12*strong)+')';ctx.stroke(p);
+      var g=ctx.createLinearGradient(cx-rad,cy-rad,cx+rad,cy+rad);
+      g.addColorStop(0,'rgba(255,255,255,'+(0.95*strong)+')');
+      g.addColorStop(0.3,'rgba(255,255,255,'+(0.2*strong)+')');
+      g.addColorStop(0.5,'rgba(255,255,255,0.03)');
+      g.addColorStop(0.72,'rgba(255,255,255,'+(0.18*strong)+')');
+      g.addColorStop(1,'rgba(255,255,255,'+(0.7*strong)+')');
+      ctx.lineWidth=lw*1.8;ctx.strokeStyle=g;ctx.stroke(p);
+      ctx.restore();
+    }
+
+    if(!state.glass){
+      if(state.container){ctx.fillStyle=boxCss;ctx.fill(disc);}
+      ctx.fillStyle='rgb('+c[0]+','+c[1]+','+c[2]+')';ctx.fill(path);
+      return;
+    }
+
+    // --- Sıvı cam ---
+    drawScene(acc*0.8,c);
+    ctx.save();
+    if(state.container)ctx.clip(disc);
+    ctx.drawImage(bg,0,0,BGS,BGS,0,0,size,size);
+    ctx.restore();
+    if(state.container){
+      ctx.fillStyle='rgba(255,255,255,0.05)';ctx.fill(disc);
+      rim(disc,Rc*0.012,Rc,0.9);
+    }
+    // yumuşak gölge: iki kaydırılmış koyu dolgu
+    ctx.save();
+    ctx.translate(0,Rs*0.13);ctx.fillStyle='rgba(0,0,0,0.16)';ctx.fill(path);
+    ctx.translate(0,-Rs*0.06);ctx.fillStyle='rgba(0,0,0,0.16)';ctx.fill(path);
+    ctx.restore();
+    // mercek: kenarda küçülmüş, ortada büyütülmüş görüntü
+    ctx.save();
+    ctx.clip(path);
+    ctx.save();scaleAbout(0.8);
+    ctx.drawImage(bg,0,0,BGS,BGS,0,0,size,size);
+    ctx.restore();
+    ctx.save();
+    scaleAbout(0.74);ctx.clip(path);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    scaleAbout(1.3);
+    ctx.drawImage(bg,0,0,BGS,BGS,0,0,size,size);
+    ctx.restore();
+    var tg=ctx.createLinearGradient(cx-Rs,cy-Rs,cx+Rs,cy+Rs);
+    tg.addColorStop(0,'rgba('+c[0]+','+c[1]+','+c[2]+',0.34)');
+    tg.addColorStop(1,'rgba('+c[0]+','+c[1]+','+c[2]+',0.12)');
+    ctx.fillStyle=tg;ctx.fill(path);
+    ctx.restore();
+    rim(path,Rs*0.03,Rs*1.1,1);
+    // hafif renk sapması
+    ctx.save();
+    ctx.globalCompositeOperation='screen';ctx.lineWidth=1.6;
+    ctx.translate(1.3,0);ctx.strokeStyle='rgba(0,255,255,0.35)';ctx.stroke(path);
+    ctx.translate(-2.6,0);ctx.strokeStyle='rgba(255,0,170,0.3)';ctx.stroke(path);
+    ctx.restore();
+  }
+  function loop(){
+    // sıvı camda saniyede ~35 kare yeterli, telefon rahat eder
+    if(state.glass&&performance.now()-lastNow<28){requestAnimationFrame(loop);return;}
+    frame();requestAnimationFrame(loop);
+  }
+  frame();
+  requestAnimationFrame(loop);
+  // requestAnimationFrame durursa zamanlayıcı devralır
+  setInterval(function(){if(performance.now()-lastNow>120)frame();},50);
+})();
+</script>
+
+</body></html>

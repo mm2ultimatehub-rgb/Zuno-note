@@ -1,0 +1,406 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Yumuşak Anahtar</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: üstte başlık + Ayarlar, ortada büyük anahtar ve durum yazısı, altında aynı anahtarın küçük hâli ile örnek ayar satırları.
+   Dalga Yükleyici ve Yumuşak Yükleyici ile aynı koyu turkuaz dünya; tek koyu görünüm, bilerek. */
+:root{
+  --bg:#0b1214;
+  --fg:#e6f2f2;
+  --muted:#84a0a0;
+  --line:#1b2c2e;
+  --panel:rgba(14,24,26,.94);
+  --panel-line:rgba(255,255,255,.14);
+  --accent:#a3f0f0;
+  --font-display:'Space Grotesk',system-ui,sans-serif;
+  --font-body:'Inter',system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{height:100%}
+body{
+  margin:0;min-height:100%;
+  background:var(--bg);color:var(--fg);
+  font-family:var(--font-body);
+  padding-block:20px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;justify-content:center;
+}
+.wrap{position:relative;width:100%;max-width:440px;display:flex;flex-direction:column;align-items:center;gap:28px;min-width:0}
+.bar{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.title{font-family:var(--font-display);font-weight:600;font-size:1rem;letter-spacing:.02em;color:var(--muted)}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.gear{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--panel-line);font-size:.85rem}
+.gear[aria-expanded="true"]{background:rgba(255,255,255,.14)}
+
+.hero{display:flex;flex-direction:column;align-items:center;gap:20px;padding-top:28px}
+.sw{display:block;padding:0;border:0;background:none;border-radius:999px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.sw canvas{display:block;width:100%;height:100%}
+.sw.big{width:min(100%,280px);aspect-ratio:2/1}
+.sw.sm{width:60px;height:34px;flex:none}
+.state{font-family:var(--font-display);font-size:1.9rem;font-weight:600;min-height:1.2em;text-align:center}
+.hint{font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:-12px}
+
+.list{width:100%;display:flex;flex-direction:column}
+.list h2{margin:0 0 6px;font-size:.72rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.item{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-top:1px solid var(--line)}
+.item:last-child{border-bottom:1px solid var(--line)}
+.item .txt{min-width:0;display:flex;flex-direction:column;gap:3px}
+.item .t{font-size:1rem;font-weight:500}
+.item .d{font-size:.85rem;color:var(--muted)}
+
+.panel{
+  position:absolute;top:46px;right:0;z-index:10;
+  width:min(100%,350px);padding:16px;border-radius:18px;
+  background:var(--panel);border:1px solid var(--panel-line);
+  box-shadow:0 18px 50px rgba(0,0,0,.5);
+  display:flex;flex-direction:column;gap:16px;
+}
+.panel[hidden]{display:none}
+.row{display:flex;flex-direction:column;gap:8px}
+.row>.name{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.seg{display:flex;padding:3px;border-radius:12px;background:rgba(255,255,255,.06);gap:3px}
+.seg button{flex:1;padding:8px 10px;border:0;border-radius:9px;background:transparent;font-size:.9rem;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:rgba(255,255,255,.16);color:var(--fg)}
+.swatches{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.swc{width:30px;height:30px;border-radius:50%;border:2px solid transparent;padding:0;background:var(--c)}
+.swc[aria-pressed="true"]{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.25)}
+.custom{display:inline-flex;align-items:center;gap:8px;font-size:.82rem;color:var(--muted)}
+.custom input{width:34px;height:30px;padding:0;border:1px solid var(--panel-line);border-radius:8px;background:transparent}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:7px 12px;border-radius:999px;border:1px solid var(--panel-line);background:transparent;font-size:.85rem;color:var(--muted)}
+.chip[aria-pressed="true"]{background:rgba(255,255,255,.16);color:var(--fg);border-color:rgba(255,255,255,.3)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+
+<div class="wrap">
+  <div class="bar">
+    <span class="title">Yumuşak Anahtar</span>
+    <button class="gear" id="gear" type="button" aria-expanded="false" aria-controls="panel">⚙ Ayarlar</button>
+  </div>
+
+  <div class="panel" id="panel" hidden>
+    <div class="row">
+      <span class="name">Stil</span>
+      <div class="seg" data-key="style">
+        <button type="button" data-val="shape" aria-pressed="true">Şekil dönüşü</button>
+        <button type="button" data-val="liquid" aria-pressed="false">Sıvı dolum</button>
+      </div>
+    </div>
+    <div class="row">
+      <span class="name">Açıkken şekil</span>
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="row">
+      <span class="name">Renk</span>
+      <div class="swatches" id="swatches">
+        <button type="button" class="swc" data-c="#a3f0f0" style="--c:#a3f0f0" aria-label="Turkuaz" aria-pressed="true"></button>
+        <button type="button" class="swc" data-c="#ffb454" style="--c:#ffb454" aria-label="Turuncu" aria-pressed="false"></button>
+        <button type="button" class="swc" data-c="#ff9db8" style="--c:#ff9db8" aria-label="Pembe" aria-pressed="false"></button>
+        <button type="button" class="swc" data-c="#9ccaff" style="--c:#9ccaff" aria-label="Mavi" aria-pressed="false"></button>
+        <button type="button" class="swc" data-c="#a6f0a6" style="--c:#a6f0a6" aria-label="Yeşil" aria-pressed="false"></button>
+        <button type="button" class="swc" data-c="#cdb4ff" style="--c:#cdb4ff" aria-label="Mor" aria-pressed="false"></button>
+      </div>
+      <label class="custom" for="custom">Kendi rengin <input type="color" id="custom" value="#ffd166"></label>
+    </div>
+    <div class="row">
+      <span class="name">Hız</span>
+      <input type="range" id="speed" min="0.5" max="2" step="0.1" value="1" aria-label="Animasyon hızı">
+    </div>
+  </div>
+
+  <div class="hero">
+    <button class="sw big" type="button" role="switch" aria-checked="true" aria-label="Ana anahtar" data-i="0"><canvas></canvas></button>
+    <div class="state" id="stateLabel" aria-live="polite">Açık</div>
+    <div class="hint">Dokunarak değiştir</div>
+  </div>
+
+  <div class="list">
+    <h2>Örnek ayarlar</h2>
+    <div class="item">
+      <div class="txt"><span class="t" id="l1">Bildirimler</span><span class="d">Yeni mesajlarda ses çal</span></div>
+      <button class="sw sm" type="button" role="switch" aria-checked="true" aria-labelledby="l1" data-i="1"><canvas></canvas></button>
+    </div>
+    <div class="item">
+      <div class="txt"><span class="t" id="l2">Otomatik karanlık mod</span><span class="d">Akşam saatlerinde kendiliğinden aç</span></div>
+      <button class="sw sm" type="button" role="switch" aria-checked="true" aria-labelledby="l2" data-i="2"><canvas></canvas></button>
+    </div>
+    <div class="item">
+      <div class="txt"><span class="t" id="l3">Dokunuş titreşimi</span><span class="d">Düğmelere basınca hafif titret</span></div>
+      <button class="sw sm" type="button" role="switch" aria-checked="false" aria-labelledby="l3" data-i="3"><canvas></canvas></button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var TAU=Math.PI*2,N=120;
+  var panel=document.getElementById('panel');
+  var gear=document.getElementById('gear');
+  var chipsEl=document.getElementById('chips');
+  var stateLabel=document.getElementById('stateLabel');
+  var reduce=false;
+  try{reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){}
+
+  function clamp(x,a,b){return x<a?a:(x>b?b:x);}
+
+  // ---- Şekil tanımları ----
+  function smooth(arr,sigma){
+    if(sigma<0.1)return arr;
+    var rad=Math.ceil(3*sigma),w=[],sum=0,d;
+    for(d=-rad;d<=rad;d++){var v=Math.exp(-d*d/(2*sigma*sigma));w.push(v);sum+=v;}
+    var out=new Float32Array(N);
+    for(var i=0;i<N;i++){
+      var a=0;
+      for(d=-rad;d<=rad;d++){a+=arr[((i+d)%N+N)%N]*w[d+rad];}
+      out[i]=a/sum;
+    }
+    return out;
+  }
+  function polyR(n,t,off){
+    var tp=t+Math.PI/2+(off||0),seg=TAU/n;
+    var phi=(((tp%seg)+seg)%seg)-seg/2;
+    return Math.cos(Math.PI/n)/Math.cos(phi);
+  }
+  function build(fn,sigma,mean){
+    var a=new Float32Array(N),i,sum=0;
+    for(i=0;i<N;i++){a[i]=fn(i/N*TAU);}
+    a=smooth(a,sigma);
+    for(i=0;i<N;i++)sum+=a[i];
+    var k=mean/(sum/N);
+    for(i=0;i<N;i++)a[i]*=k;
+    return a;
+  }
+  var DEFS=[
+    {id:'burst',name:'Yumuşak yıldız',r:build(function(t){return 1+0.1*Math.cos(10*t);},0,0.92)},
+    {id:'sun',name:'Güneş',r:build(function(t){return 1+0.14*Math.cos(8*t);},0,0.92)},
+    {id:'pent',name:'Beşgen',r:build(function(t){return polyR(5,t,0);},5.5,0.92)},
+    {id:'hex',name:'Altıgen',r:build(function(t){return polyR(6,t,0);},4.5,0.92)},
+    {id:'sq',name:'Kare',r:build(function(t){return polyR(4,t,Math.PI/4);},5.5,0.92)},
+    {id:'pill',name:'Hap',r:build(function(t){
+      var a=0.74,b=1,p=3.2,c=Math.abs(Math.cos(t))/a,s=Math.abs(Math.sin(t))/b;
+      return Math.pow(Math.pow(c,p)+Math.pow(s,p),-1/p);
+    },0,0.88)}
+  ];
+  var CIRC=new Float32Array(N);
+  for(var ci=0;ci<N;ci++)CIRC[ci]=0.92;
+  function curShape(){
+    for(var i=0;i<DEFS.length;i++){if(DEFS[i].id===state.shape)return DEFS[i].r;}
+    return DEFS[0].r;
+  }
+
+  // ---- Ayarlar ----
+  var state={style:'shape',shape:'burst',color:'#a3f0f0',speed:1,sw:[true,true,true,false]};
+  try{
+    var saved=JSON.parse(localStorage.getItem('anahtar-ayar')||'null');
+    if(saved){
+      for(var k in state){if(k in saved)state[k]=saved[k];}
+      if(!Array.isArray(state.sw)||state.sw.length!==4)state.sw=[true,true,true,false];
+    }
+  }catch(e){}
+  function save(){try{localStorage.setItem('anahtar-ayar',JSON.stringify(state));}catch(e){}}
+
+  DEFS.forEach(function(d){
+    var b=document.createElement('button');
+    b.type='button';b.className='chip';b.textContent=d.name;b.setAttribute('data-id',d.id);
+    chipsEl.appendChild(b);
+  });
+
+  function hexToRgb(h){
+    h=String(h).replace('#','');
+    if(h.length===3)h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+    var n=parseInt(h,16);
+    return [(n>>16)&255,(n>>8)&255,n&255];
+  }
+  function rgbToHsl(r,g,b){
+    r/=255;g/=255;b/=255;
+    var mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2,h=0,s=0,d=mx-mn;
+    if(d){
+      s=l>0.5?d/(2-mx-mn):d/(mx+mn);
+      if(mx===r)h=((g-b)/d+(g<b?6:0));else if(mx===g)h=(b-r)/d+2;else h=(r-g)/d+4;
+      h*=60;
+    }
+    return [h,s,l];
+  }
+  function hslToRgb(h,s,l){
+    h=((h%360)+360)%360/360;
+    function f(p,q,t){
+      if(t<0)t+=1;if(t>1)t-=1;
+      if(t<1/6)return p+(q-p)*6*t;
+      if(t<1/2)return q;
+      if(t<2/3)return p+(q-p)*(2/3-t)*6;
+      return p;
+    }
+    var q=l<0.5?l*(1+s):l+s-l*s,p=2*l-q;
+    return [Math.round(f(p,q,h+1/3)*255),Math.round(f(p,q,h)*255),Math.round(f(p,q,h-1/3)*255)];
+  }
+  function mix(a,b,t){
+    return 'rgb('+Math.round(a[0]+(b[0]-a[0])*t)+','+Math.round(a[1]+(b[1]-a[1])*t)+','+Math.round(a[2]+(b[2]-a[2])*t)+')';
+  }
+  var rgb,darkRgb;
+  var TOFF=[27,44,46],KOFF=[132,160,160],LIQ=[20,34,37];
+  function setAccent(){
+    rgb=hexToRgb(state.color);
+    var hsl=rgbToHsl(rgb[0],rgb[1],rgb[2]);
+    darkRgb=hslToRgb(hsl[0],Math.min(1,hsl[1]*1.35),0.13);
+    document.documentElement.style.setProperty('--accent',state.color);
+  }
+
+  function syncUI(){
+    [].forEach.call(document.querySelectorAll('.seg'),function(seg){
+      [].forEach.call(seg.children,function(b){b.setAttribute('aria-pressed',String(b.getAttribute('data-val')===state.style));});
+    });
+    [].forEach.call(document.querySelectorAll('.swc'),function(b){
+      b.setAttribute('aria-pressed',String(b.getAttribute('data-c')===state.color));
+    });
+    [].forEach.call(chipsEl.children,function(b){
+      b.setAttribute('aria-pressed',String(b.getAttribute('data-id')===state.shape));
+    });
+    document.getElementById('speed').value=String(state.speed);
+    [].forEach.call(document.querySelectorAll('.sw'),function(b){
+      b.setAttribute('aria-checked',String(!!state.sw[+b.getAttribute('data-i')]));
+    });
+    stateLabel.textContent=state.sw[0]?'Açık':'Kapalı';
+    setAccent();
+  }
+
+  gear.addEventListener('click',function(){
+    var open=panel.hidden;panel.hidden=!open;gear.setAttribute('aria-expanded',String(open));
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&!panel.hidden){panel.hidden=true;gear.setAttribute('aria-expanded','false');gear.focus();}
+  });
+  document.querySelector('.seg').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    state.style=b.getAttribute('data-val');save();syncUI();
+  });
+  chipsEl.addEventListener('click',function(e){
+    var b=e.target.closest('.chip');if(!b)return;
+    state.shape=b.getAttribute('data-id');save();syncUI();
+  });
+  document.getElementById('swatches').addEventListener('click',function(e){
+    var b=e.target.closest('.swc');if(!b)return;
+    state.color=b.getAttribute('data-c');save();syncUI();
+  });
+  document.getElementById('custom').addEventListener('input',function(e){
+    state.color=e.target.value;save();syncUI();
+  });
+  document.getElementById('speed').addEventListener('input',function(e){
+    state.speed=parseFloat(e.target.value)||1;save();
+  });
+
+  // ---- Anahtarlar ----
+  var dpr=1,clock=0;
+  var items=[].map.call(document.querySelectorAll('.sw'),function(btn){
+    var i=+btn.getAttribute('data-i');
+    var o={btn:btn,i:i,cv:btn.querySelector('canvas'),w:0,h:0,s:state.sw[i]?1:0,v:0,press:0,pt:0,spin:0};
+    o.ctx=o.cv.getContext('2d');
+    btn.addEventListener('click',function(){
+      state.sw[i]=!state.sw[i];save();syncUI();
+    });
+    btn.addEventListener('pointerdown',function(){o.pt=1;});
+    ['pointerup','pointerleave','pointercancel'].forEach(function(n){btn.addEventListener(n,function(){o.pt=0;});});
+    return o;
+  });
+  syncUI();
+
+  function resize(){
+    dpr=Math.min(window.devicePixelRatio||1,2);
+    items.forEach(function(o){
+      o.w=o.btn.clientWidth;o.h=o.btn.clientHeight;
+      o.cv.width=Math.round(o.w*dpr);o.cv.height=Math.round(o.h*dpr);
+    });
+  }
+  window.addEventListener('resize',resize);
+  resize();
+
+  function pillPath(w,h){
+    var p=new Path2D(),r=h/2;
+    p.moveTo(r,0);p.lineTo(w-r,0);p.arc(w-r,r,r,-Math.PI/2,Math.PI/2);
+    p.lineTo(r,h);p.arc(r,r,r,Math.PI/2,Math.PI*1.5);p.closePath();
+    return p;
+  }
+  function wavePath(h,edge,A,ph){
+    var p=new Path2D(),st=h/10,y;
+    p.moveTo(-4,-4);
+    p.lineTo(edge+Math.sin(ph)*A,-4);
+    for(y=0;y<=h+st;y+=st){p.lineTo(edge+Math.sin(y/h*TAU*1.2+ph)*A,y);}
+    p.lineTo(-4,h+4);p.closePath();
+    return p;
+  }
+  function knobPath(x,y,R,rot,m,shape){
+    var p=new Path2D(),i,r,a;
+    for(i=0;i<N;i++){
+      r=(CIRC[i]+(shape[i]-CIRC[i])*m)/0.92;a=i/N*TAU+rot;
+      if(i===0)p.moveTo(x+Math.cos(a)*R*r,y+Math.sin(a)*R*r);
+      else p.lineTo(x+Math.cos(a)*R*r,y+Math.sin(a)*R*r);
+    }
+    p.closePath();
+    return p;
+  }
+
+  function step(o,dt){
+    var tgt=state.sw[o.i]?1:0,sp=state.speed;
+    if(reduce){o.s=tgt;o.v=0;}
+    else{
+      var kk=200*sp*sp,cc=2*Math.sqrt(kk)*0.55,n=3,hh=dt/n,j;
+      for(j=0;j<n;j++){o.v+=((tgt-o.s)*kk-o.v*cc)*hh;o.s+=o.v*hh;}
+      if(Math.abs(tgt-o.s)<0.0005&&Math.abs(o.v)<0.01){o.s=tgt;o.v=0;}
+    }
+    o.press+=(o.pt-o.press)*Math.min(1,dt*16);
+    o.spin+=dt*sp*1.1*clamp(o.s,0,1);
+  }
+
+  function draw(o){
+    var ctx=o.ctx,w=o.w,h=o.h;
+    if(!w||!h)return;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,w,h);
+    var s=o.s,sc=clamp(s,0,1),m=sc;
+    var track=pillPath(w,h);
+    var R=h*0.38*(0.7+0.3*clamp(s,0,1.1))*(1-0.1*o.press);
+    var x=h/2+(w-h)*clamp(s,-0.04,1.06),y=h/2;
+    var rot=s*2.0+o.spin;
+    var knob=knobPath(x,y,R,rot,m,curShape());
+
+    if(state.style==='shape'){
+      ctx.fillStyle=mix(TOFF,rgb,sc);ctx.fill(track);
+      ctx.fillStyle=mix(KOFF,darkRgb,clamp(sc*1.3-0.15,0,1));ctx.fill(knob);
+    }else{
+      ctx.fillStyle='rgb('+LIQ[0]+','+LIQ[1]+','+LIQ[2]+')';ctx.fill(track);
+      ctx.save();
+      ctx.clip(track);
+      var edge=-h*0.4+(w+h*0.8)*sc,A=h*0.16*Math.sin(Math.PI*sc);
+      ctx.fillStyle='rgba('+rgb[0]+','+rgb[1]+','+rgb[2]+',0.4)';
+      ctx.fill(wavePath(h,edge+h*0.1,A*1.1,clock*2.2));
+      var front=wavePath(h,edge,A,-clock*3.1+1.2);
+      ctx.fillStyle='rgb('+rgb[0]+','+rgb[1]+','+rgb[2]+')';ctx.fill(front);
+      ctx.fillStyle='rgb('+KOFF[0]+','+KOFF[1]+','+KOFF[2]+')';ctx.fill(knob);
+      ctx.save();
+      ctx.clip(front);
+      ctx.fillStyle='rgb('+darkRgb[0]+','+darkRgb[1]+','+darkRgb[2]+')';ctx.fill(knob);
+      ctx.restore();
+      ctx.restore();
+    }
+  }
+
+  var last=performance.now();
+  function frame(){
+    var now=performance.now();
+    var dt=Math.min((now-last)/1000,0.05);
+    last=now;
+    clock+=dt*state.speed;
+    items.forEach(function(o){step(o,dt);draw(o);});
+  }
+  function loop(){frame();requestAnimationFrame(loop);}
+  frame();
+  requestAnimationFrame(loop);
+  // requestAnimationFrame durursa zamanlayıcı devralır
+  setInterval(function(){if(performance.now()-last>120)frame();},50);
+})();
+</script>
+
+</body></html>

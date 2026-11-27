@@ -1,0 +1,370 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Dalga Yükleyici</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: üstte başlık + Ayarlar, ortada sahne (sıvı dolan kap ya da dalgalı çizgi), altında "Yükleniyor".
+   Önceki sayfayla aynı koyu turkuaz dünya; telefon dostu: filtre ve bulanık gölge yok, çözünürlük sınırlı. */
+:root{
+  --bg:#0b1214;
+  --fg:#e6f2f2;
+  --muted:#84a0a0;
+  --line:#1b2c2e;
+  --panel:rgba(14,24,26,.94);
+  --panel-line:rgba(255,255,255,.14);
+  --accent:#a3f0f0;
+  --font-display:'Space Grotesk',system-ui,sans-serif;
+  --font-body:'Inter',system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{height:100%}
+body{
+  margin:0;min-height:100%;
+  background:var(--bg);color:var(--fg);
+  font-family:var(--font-body);
+  padding-block:20px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;align-items:center;justify-content:center;
+}
+.wrap{position:relative;width:100%;max-width:440px;display:flex;flex-direction:column;align-items:center;gap:18px;min-width:0}
+.bar{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.title{font-family:var(--font-display);font-weight:600;font-size:1rem;letter-spacing:.02em;color:var(--muted)}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.gear{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--panel-line);font-size:.85rem}
+.gear[aria-expanded="true"]{background:rgba(255,255,255,.14)}
+
+.stage{position:relative;width:100%;aspect-ratio:1/1}
+.stage canvas{display:block;width:100%;height:100%}
+.status{font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+
+.panel{
+  position:absolute;top:46px;right:0;z-index:10;
+  width:min(100%,350px);padding:16px;border-radius:18px;
+  background:var(--panel);border:1px solid var(--panel-line);
+  box-shadow:0 18px 50px rgba(0,0,0,.5);
+  display:flex;flex-direction:column;gap:16px;
+}
+.panel[hidden]{display:none}
+.row{display:flex;flex-direction:column;gap:8px}
+.row[hidden]{display:none}
+.row>.name{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.seg{display:flex;padding:3px;border-radius:12px;background:rgba(255,255,255,.06);gap:3px}
+.seg button{flex:1;padding:8px 10px;border:0;border-radius:9px;background:transparent;font-size:.9rem;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:rgba(255,255,255,.16);color:var(--fg)}
+.swatches{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.sw{width:30px;height:30px;border-radius:50%;border:2px solid transparent;padding:0;background:var(--c)}
+.sw[aria-pressed="true"]{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.25)}
+.custom{display:inline-flex;align-items:center;gap:8px;font-size:.82rem;color:var(--muted)}
+.custom input{width:34px;height:30px;padding:0;border:1px solid var(--panel-line);border-radius:8px;background:transparent}
+input[type=range]{width:100%;accent-color:var(--accent)}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+
+<div class="wrap">
+  <div class="bar">
+    <span class="title">Dalga Yükleyici</span>
+    <button class="gear" id="gear" type="button" aria-expanded="false" aria-controls="panel">⚙ Ayarlar</button>
+  </div>
+
+  <div class="panel" id="panel" hidden>
+    <div class="row">
+      <span class="name">Stil</span>
+      <div class="seg" data-key="style">
+        <button type="button" data-val="liquid" aria-pressed="true">Sıvı kap</button>
+        <button type="button" data-val="line" aria-pressed="false">Dalgalı çizgi</button>
+        <button type="button" data-val="ring" aria-pressed="false">Dalgalı halka</button>
+      </div>
+    </div>
+    <div class="row" id="dirRow" hidden>
+      <span class="name">Yön</span>
+      <div class="seg" data-key="dir">
+        <button type="button" data-val="cw" aria-pressed="true">Saat yönü</button>
+        <button type="button" data-val="ccw" aria-pressed="false">Ters yön</button>
+      </div>
+    </div>
+    <div class="row" id="shapeRow">
+      <span class="name">Kap şekli</span>
+      <div class="seg" data-key="shape">
+        <button type="button" data-val="circle" aria-pressed="true">Daire</button>
+        <button type="button" data-val="square" aria-pressed="false">Yuvarlak kare</button>
+      </div>
+    </div>
+    <div class="row">
+      <span class="name">Yüzde yazısı</span>
+      <div class="seg" data-key="pct">
+        <button type="button" data-val="1" aria-pressed="true">Göster</button>
+        <button type="button" data-val="0" aria-pressed="false">Gizle</button>
+      </div>
+    </div>
+    <div class="row">
+      <span class="name">Renk</span>
+      <div class="swatches" id="swatches">
+        <button type="button" class="sw" data-c="#a3f0f0" style="--c:#a3f0f0" aria-label="Turkuaz" aria-pressed="true"></button>
+        <button type="button" class="sw" data-c="#ffb454" style="--c:#ffb454" aria-label="Turuncu" aria-pressed="false"></button>
+        <button type="button" class="sw" data-c="#ff9db8" style="--c:#ff9db8" aria-label="Pembe" aria-pressed="false"></button>
+        <button type="button" class="sw" data-c="#9ccaff" style="--c:#9ccaff" aria-label="Mavi" aria-pressed="false"></button>
+        <button type="button" class="sw" data-c="#a6f0a6" style="--c:#a6f0a6" aria-label="Yeşil" aria-pressed="false"></button>
+        <button type="button" class="sw" data-c="#cdb4ff" style="--c:#cdb4ff" aria-label="Mor" aria-pressed="false"></button>
+      </div>
+      <label class="custom" for="custom">Kendi rengin <input type="color" id="custom" value="#ffd166"></label>
+    </div>
+    <div class="row">
+      <span class="name">Dalga yüksekliği</span>
+      <input type="range" id="amp" min="0.3" max="1.8" step="0.1" value="1" aria-label="Dalga yüksekliği">
+    </div>
+    <div class="row">
+      <span class="name">Hız</span>
+      <input type="range" id="speed" min="0.4" max="2" step="0.1" value="1" aria-label="Animasyon hızı">
+    </div>
+  </div>
+
+  <div class="stage" id="stage"><canvas id="cv"></canvas></div>
+  <div class="status">Yükleniyor</div>
+</div>
+
+<script>
+(function(){
+  var TAU=Math.PI*2;
+  var stage=document.getElementById('stage');
+  var cv=document.getElementById('cv');
+  var ctx=cv.getContext('2d');
+  var panel=document.getElementById('panel');
+  var gear=document.getElementById('gear');
+  var shapeRow=document.getElementById('shapeRow');
+  var dirRow=document.getElementById('dirRow');
+
+  // ---- Ayarlar ----
+  var state={style:'liquid',shape:'circle',dir:'cw',pct:true,color:'#a3f0f0',speed:1,amp:1};
+  try{var saved=JSON.parse(localStorage.getItem('dalga-ayar')||'null');if(saved){for(var k in state){if(k in saved)state[k]=saved[k];}}}catch(e){}
+  function save(){try{localStorage.setItem('dalga-ayar',JSON.stringify(state));}catch(e){}}
+
+  function hexToRgb(h){
+    h=String(h).replace('#','');
+    if(h.length===3)h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+    var n=parseInt(h,16);
+    return [(n>>16)&255,(n>>8)&255,n&255];
+  }
+  function rgbToHsl(r,g,b){
+    r/=255;g/=255;b/=255;
+    var mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2,h=0,s=0,d=mx-mn;
+    if(d){
+      s=l>0.5?d/(2-mx-mn):d/(mx+mn);
+      if(mx===r)h=((g-b)/d+(g<b?6:0));else if(mx===g)h=(b-r)/d+2;else h=(r-g)/d+4;
+      h*=60;
+    }
+    return [h,s*100,l*100];
+  }
+  var rgb,boxCss;
+  function setAccent(){
+    rgb=hexToRgb(state.color);
+    var hsl=rgbToHsl(rgb[0],rgb[1],rgb[2]);
+    boxCss='hsl('+Math.round(hsl[0])+','+Math.round(Math.min(100,hsl[1]*1.35))+'%,16%)';
+    document.documentElement.style.setProperty('--accent',state.color);
+  }
+  function rgba(a){return 'rgba('+rgb[0]+','+rgb[1]+','+rgb[2]+','+a+')';}
+
+  function syncUI(){
+    [].forEach.call(document.querySelectorAll('.seg'),function(seg){
+      var key=seg.getAttribute('data-key');
+      var cur=key==='pct'?(state.pct?'1':'0'):state[key];
+      [].forEach.call(seg.children,function(b){b.setAttribute('aria-pressed',String(b.getAttribute('data-val')===cur));});
+    });
+    [].forEach.call(document.querySelectorAll('.sw'),function(b){
+      b.setAttribute('aria-pressed',String(b.getAttribute('data-c')===state.color));
+    });
+    document.getElementById('speed').value=String(state.speed);
+    document.getElementById('amp').value=String(state.amp);
+    shapeRow.hidden=(state.style!=='liquid');
+    dirRow.hidden=(state.style==='liquid');
+    setAccent();
+  }
+
+  gear.addEventListener('click',function(){
+    var open=panel.hidden;panel.hidden=!open;gear.setAttribute('aria-expanded',String(open));
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&!panel.hidden){panel.hidden=true;gear.setAttribute('aria-expanded','false');gear.focus();}
+  });
+  [].forEach.call(document.querySelectorAll('.seg'),function(seg){
+    seg.addEventListener('click',function(e){
+      var b=e.target.closest('button');if(!b)return;
+      var key=seg.getAttribute('data-key'),v=b.getAttribute('data-val');
+      if(key==='pct')state.pct=(v==='1');else state[key]=v;
+      save();syncUI();
+    });
+  });
+  document.getElementById('swatches').addEventListener('click',function(e){
+    var b=e.target.closest('.sw');if(!b)return;
+    state.color=b.getAttribute('data-c');save();syncUI();
+  });
+  document.getElementById('custom').addEventListener('input',function(e){
+    state.color=e.target.value;save();syncUI();
+  });
+  document.getElementById('speed').addEventListener('input',function(e){
+    state.speed=parseFloat(e.target.value)||1;save();
+  });
+  document.getElementById('amp').addEventListener('input',function(e){
+    state.amp=parseFloat(e.target.value)||1;save();
+  });
+  syncUI();
+
+  // ---- Çizim ----
+  var size=300,dpr=1;
+  function resize(){
+    size=stage.clientWidth||300;
+    dpr=Math.min(window.devicePixelRatio||1,1.5);
+    cv.width=Math.round(size*dpr);cv.height=Math.round(size*dpr);
+  }
+  window.addEventListener('resize',resize);
+  resize();
+
+  function roundRectPath(p,x,y,w,h,r){
+    p.moveTo(x+r,y);
+    p.arcTo(x+w,y,x+w,y+h,r);
+    p.arcTo(x+w,y+h,x,y+h,r);
+    p.arcTo(x,y+h,x,y,r);
+    p.arcTo(x,y,x+w,y,r);
+    p.closePath();
+  }
+
+  var DUR=4.2;        // bir dolum süresi (sn)
+  var acc=0,lastNow=performance.now();
+
+  function frame(){
+    var now=performance.now();
+    var dt=Math.min((now-lastNow)/1000,0.1);
+    lastNow=now;
+    acc+=dt*state.speed;
+
+    var p=(acc/DUR)%1;
+    var ep=-(Math.cos(Math.PI*p)-1)/2;                       // yumuşak başlayıp yumuşak biten ilerleme
+    var fade=p<0.05?p/0.05:(p>0.93?(1-p)/0.07:1);             // başta belirir, sonda söner
+    var pctText=Math.round(ep*100)+'%';
+
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,size,size);
+    var cx=size/2,cy=size/2;
+    var amp=state.amp;
+    var dirv=state.dir==='ccw'?-1:1;
+
+    if(state.style==='liquid'){
+      var Rc=size*0.42;
+      var box=new Path2D();
+      if(state.shape==='square')roundRectPath(box,cx-Rc,cy-Rc,Rc*2,Rc*2,Rc*0.46);
+      else box.arc(cx,cy,Rc,0,TAU);
+      ctx.fillStyle=boxCss;ctx.fill(box);
+
+      var level=ep;
+      var A=Rc*0.085*amp*(0.3+0.7*Math.sin(Math.PI*level));
+      var base=cy+Rc*1.15-level*Rc*2.3;
+      var step=Math.max(3,size/90);
+      var front=new Path2D(),back=new Path2D(),x,first=true;
+      for(x=cx-Rc;x<=cx+Rc+step;x+=step){
+        var yb=base+Rc*0.05+Math.sin(x/(Rc*1.25)*TAU+acc*2.2)*A*1.1;
+        var yf=base+Math.sin(x/(Rc*0.95)*TAU-acc*3.1+1.2)*A*0.85;
+        if(first){back.moveTo(x,yb);front.moveTo(x,yf);first=false;}
+        else{back.lineTo(x,yb);front.lineTo(x,yf);}
+      }
+      var bottom=cy+Rc+8;
+      back.lineTo(cx+Rc+step,bottom);back.lineTo(cx-Rc,bottom);back.closePath();
+      front.lineTo(cx+Rc+step,bottom);front.lineTo(cx-Rc,bottom);front.closePath();
+
+      ctx.save();
+      ctx.clip(box);
+      ctx.globalAlpha=fade;
+      ctx.fillStyle=rgba(0.42);ctx.fill(back);
+      ctx.fillStyle=rgba(1);ctx.fill(front);
+      ctx.globalAlpha=1;
+      if(state.pct){
+        ctx.font='600 '+Math.round(size*0.17)+"px 'Space Grotesk',system-ui,sans-serif";
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillStyle=rgba(0.95);
+        ctx.fillText(pctText,cx,cy);
+        ctx.save();ctx.clip(front);       // sıvının içinde kalan kısım koyu renkle
+        ctx.globalAlpha=fade;
+        ctx.fillStyle=boxCss;ctx.fillText(pctText,cx,cy);
+        ctx.restore();
+      }
+      ctx.restore();
+    }else if(state.style==='ring'){
+      // Dalgalı halka: yarıçap, açıya göre sinüs ile dalgalanır
+      var R=size*0.34,lwr=size*0.05,Aw2=size*0.022*amp,nw=14,phr=acc*4;
+      var a0=-Math.PI/2,total=ep*TAU,a1=a0+dirv*total;
+      ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=lwr;
+      ctx.globalAlpha=fade;
+      var gap=lwr*1.6/R;
+      if(total<TAU-2*gap){
+        ctx.strokeStyle=rgba(0.25);
+        ctx.beginPath();ctx.arc(cx,cy,R,a1+dirv*gap,a0+dirv*(TAU-gap),dirv<0);ctx.stroke();
+        ctx.fillStyle=rgba(1);
+        var ea=a0+dirv*(TAU-gap);
+        ctx.beginPath();ctx.arc(cx+Math.cos(ea)*R,cy+Math.sin(ea)*R,lwr*0.28,0,TAU);ctx.fill();
+      }
+      if(total>0.02){
+        ctx.strokeStyle=rgba(1);
+        ctx.beginPath();
+        var steps=Math.max(2,Math.ceil(total*60)),si;
+        for(si=0;si<=steps;si++){
+          var sa=total*si/steps;
+          var th=a0+dirv*sa,rr=R+Math.sin(nw*sa-phr)*Aw2;
+          var px=cx+Math.cos(th)*rr,py=cy+Math.sin(th)*rr;
+          if(si===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+        }
+        ctx.stroke();
+      }
+      ctx.globalAlpha=1;
+      if(state.pct){
+        ctx.font='600 '+Math.round(size*0.17)+"px 'Space Grotesk',system-ui,sans-serif";
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillStyle=rgba(0.95);
+        ctx.fillText(pctText,cx,cy);
+      }
+    }else{
+      // Dalgalı ilerleme çizgisi (ters yönde aynalanır)
+      if(dirv<0){ctx.save();ctx.translate(size,0);ctx.scale(-1,1);}
+      var x0=size*0.1,x1=size*0.9,W=x1-x0,lw=size*0.05;
+      var xe=x0+W*ep;
+      var Aw=size*0.045*amp,len=size*0.17;
+      var ph=acc*4;
+      ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=lw;
+      ctx.globalAlpha=fade;
+      // iz (kalan düz kısım)
+      if(xe<x1-lw*1.6){
+        ctx.strokeStyle=rgba(0.25);
+        ctx.beginPath();ctx.moveTo(xe+lw*1.6,cy);ctx.lineTo(x1,cy);ctx.stroke();
+        ctx.fillStyle=rgba(1);
+        ctx.beginPath();ctx.arc(x1,cy,lw*0.28,0,TAU);ctx.fill();
+      }
+      // dolu dalgalı kısım
+      if(xe>x0+1){
+        ctx.strokeStyle=rgba(1);
+        ctx.beginPath();
+        var st=3,xx;
+        for(xx=x0;xx<=xe;xx+=st){
+          var yy=cy+Math.sin((xx-x0)/len*TAU-ph)*Aw;
+          if(xx===x0)ctx.moveTo(xx,yy);else ctx.lineTo(xx,yy);
+        }
+        ctx.lineTo(xe,cy+Math.sin((xe-x0)/len*TAU-ph)*Aw);
+        ctx.stroke();
+      }
+      ctx.globalAlpha=1;
+      if(dirv<0)ctx.restore();
+      if(state.pct){
+        ctx.font='600 '+Math.round(size*0.13)+"px 'Space Grotesk',system-ui,sans-serif";
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillStyle=rgba(0.95);
+        ctx.fillText(pctText,cx,cy-size*0.2);
+      }
+    }
+  }
+  function loop(){frame();requestAnimationFrame(loop);}
+  frame();
+  requestAnimationFrame(loop);
+  // requestAnimationFrame durursa zamanlayıcı devralır
+  setInterval(function(){if(performance.now()-lastNow>120)frame();},50);
+})();
+</script>
+
+</body></html>

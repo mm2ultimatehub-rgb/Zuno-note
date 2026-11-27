@@ -1,0 +1,9 @@
+{
+  "appId": "com.karanot.notebook",
+  "appName": "Karanot",
+  "webDir": "dist",
+  "android": {
+    "backgroundColor": "#000000",
+    "allowMixedContent": true
+  }
+}

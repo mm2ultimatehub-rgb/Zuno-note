@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="112" fill="#141416"/>
+  <rect x="28" y="28" width="456" height="456" rx="88" fill="#1C1C1F" stroke="#2D2D32" stroke-width="6"/>
+  <rect x="118" y="102" width="236" height="308" rx="28" fill="#0B0B0C" stroke="#323238" stroke-width="6"/>
+  <line x1="158" y1="168" x2="314" y2="168" stroke="#2C2C32" stroke-width="10" stroke-linecap="round"/>
+  <line x1="158" y1="216" x2="292" y2="216" stroke="#2C2C32" stroke-width="10" stroke-linecap="round"/>
+  <line x1="158" y1="264" x2="262" y2="264" stroke="#2C2C32" stroke-width="10" stroke-linecap="round"/>
+  <line x1="158" y1="312" x2="232" y2="312" stroke="#FF6B57" stroke-width="10" stroke-linecap="round" opacity="0.7"/>
+  <g transform="translate(320 278) rotate(38)">
+    <rect x="-18" y="-92" width="36" height="156" rx="10" fill="#FF6B57"/>
+    <polygon points="-18,64 18,64 0,104" fill="#F5F5F7"/>
+    <polygon points="-6,90 6,90 0,104" fill="#141416"/>
+    <rect x="-18" y="-92" width="36" height="24" rx="6" fill="#FF8E7E"/>
+  </g>
+</svg>

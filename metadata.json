@@ -1,0 +1,6 @@
+{
+  "name": "Karanot — Not Defteri",
+  "description": "Çevrimdışı çalışan, el yazısı ve metin destekli, yerel depolamalı modern not defteri.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
