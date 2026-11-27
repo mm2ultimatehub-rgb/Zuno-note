@@ -1,4 +1,4 @@
-export const CURRENT_APP_VERSION = import.meta.env.VITE_APP_VERSION || '1.2.1';
+export const CURRENT_APP_VERSION = import.meta.env.VITE_APP_VERSION || '1.2.6';
 export const DEFAULT_GITHUB_REPO = 'mm2ultimatehub-rgb/Zuno-note';
 
 const APK_CONFIG_KEY = 'zuno_note_apk_config_v1';
@@ -74,7 +74,7 @@ export async function checkForApkUpdate(
   const installedVersion = await getInstalledVersion();
   const repo = (cfg.githubRepo || DEFAULT_GITHUB_REPO).trim();
 
-  if (repo && repo.includes('/') && !repo.startsWith('demo')) {
+  // Accept only a GitHub owner/repository slug; reject full URLs and path fragments.\n  if (/^[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+$/.test(repo) && !repo.toLowerCase().startsWith('demo/')) {
     try {
       // Android WebView may cache the GitHub latest-release response. Add a
       // cache-buster and explicitly bypass browser/service-worker caches so
