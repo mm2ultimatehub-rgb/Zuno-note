@@ -1,4 +1,4 @@
-export const CURRENT_APP_VERSION = '1.2.1';
+export const CURRENT_APP_VERSION = import.meta.env.VITE_APP_VERSION || '1.2.1';
 export const DEFAULT_GITHUB_REPO = 'mm2ultimatehub-rgb/Zuno-note';
 
 const APK_CONFIG_KEY = 'zuno_note_apk_config_v1';
@@ -11,6 +11,7 @@ export interface ApkUpdateConfig {
 
 export interface ApkReleaseInfo {
   version: string;
+  installedVersion: string;
   sizeLabel: string;
   publishedAt: string;
   notes: string[];
@@ -56,9 +57,21 @@ function compareSemver(a: string, b: string): number {
   return 0;
 }
 
+async function getInstalledVersion(): Promise<string> {
+  try {
+    const { App } = await import('@capacitor/app');
+    const info = await App.getInfo();
+    if (info.version) return info.version.replace(/^v/i, '');
+  } catch {
+    // Web preview or plugin unavailable: use the build-in version.
+  }
+  return CURRENT_APP_VERSION;
+}
+
 export async function checkForApkUpdate(
   cfg: ApkUpdateConfig
 ): Promise<ApkReleaseInfo> {
+  const installedVersion = await getInstalledVersion();
   const repo = (cfg.githubRepo || DEFAULT_GITHUB_REPO).trim();
 
   if (repo && repo.includes('/') && !repo.startsWith('demo')) {
@@ -85,6 +98,7 @@ export async function checkForApkUpdate(
           : 'APK asset yok';
         return {
           version: latestVer,
+          installedVersion,
           sizeLabel: sizeMb,
           publishedAt: data.published_at
             ? new Date(data.published_at).toLocaleDateString('tr-TR')
@@ -95,7 +109,7 @@ export async function checkForApkUpdate(
             .filter(Boolean)
             .slice(0, 4),
           downloadUrl: apkAsset?.browser_download_url || '',
-          hasUpdate: compareSemver(latestVer, CURRENT_APP_VERSION) > 0,
+          hasUpdate: Boolean(apkAsset) && compareSemver(latestVer, installedVersion) > 0,
           isDemo: !apkAsset,
         };
       }
@@ -107,6 +121,7 @@ export async function checkForApkUpdate(
   // Do not invent release versions or provide a fake download.
   return {
     version: CURRENT_APP_VERSION,
+    installedVersion,
     sizeLabel: 'APK bulunamadı',
     publishedAt: 'Kontrol tamamlanamadı',
     notes: [
