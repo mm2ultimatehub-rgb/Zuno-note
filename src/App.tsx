@@ -163,14 +163,29 @@ export default function App() {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k' && !activeNoteId) {
+      const modifier = e.metaKey || e.ctrlKey;
+      const target = e.target as HTMLElement | null;
+      const isTyping =
+        target?.isContentEditable ||
+        target?.tagName === 'INPUT' ||
+        target?.tagName === 'TEXTAREA' ||
+        target?.tagName === 'SELECT';
+
+      if (modifier && e.key.toLowerCase() === 'k' && !activeNoteId) {
         e.preventDefault();
         setSearchOpen(true);
+      } else if (modifier && e.key.toLowerCase() === 'n' && !activeNoteId && !isTyping) {
+        e.preventDefault();
+        void handleCreateNote({ title: 'Yeni Not' });
       } else if (e.key === 'Escape') {
         setShowTopMoreMenu(false);
         setShowExpressivePanel(false);
         setShowTemplatePicker(false);
         setContextMenuNoteId(null);
+        if (searchOpen) {
+          if (searchQuery) setSearchQuery('');
+          else setSearchOpen(false);
+        }
         if (isSelectionMode) {
           setIsSelectionMode(false);
           setSelectedNoteIds([]);
@@ -179,7 +194,7 @@ export default function App() {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [activeNoteId, isSelectionMode]);
+  }, [activeNoteId, isSelectionMode, searchOpen, searchQuery]);
 
   const activeNote = useMemo(
     () => notes.find((n) => n.id === activeNoteId) || null,
