@@ -9,7 +9,7 @@ interface MarkdownPreviewProps {
 
 function renderInline(text: string, isLightPaper: boolean): React.ReactNode[] {
   const nodes: React.ReactNode[] = [];
-  const regex = /(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g;
+  const regex = /(\*\*[^*]+\*\*|~~[^~]+~~|\*[^*]+\*|`[^`]+`|\[[^\]]+\]\(https?:\/\/[^)\s]+\))/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
   let key = 0;
@@ -24,6 +24,12 @@ function renderInline(text: string, isLightPaper: boolean): React.ReactNode[] {
         <strong key={key++} className="font-semibold">
           {token.slice(2, -2)}
         </strong>
+      );
+    } else if (token.startsWith('~~') && token.endsWith('~~')) {
+      nodes.push(
+        <del key={key++} className="opacity-70">
+          {token.slice(2, -2)}
+        </del>
       );
     } else if (token.startsWith('*') && token.endsWith('*')) {
       nodes.push(
@@ -44,6 +50,23 @@ function renderInline(text: string, isLightPaper: boolean): React.ReactNode[] {
           {token.slice(1, -1)}
         </code>
       );
+    } else if (token.startsWith('[')) {
+      const link = token.match(/^\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)$/);
+      if (link) {
+        nodes.push(
+          <a
+            key={key++}
+            href={link[2]}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[var(--accent)] underline underline-offset-2 break-all"
+          >
+            {link[1]}
+          </a>
+        );
+      } else {
+        nodes.push(token);
+      }
     }
     lastIndex = regex.lastIndex;
   }
