@@ -157,7 +157,7 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
       return;
     }
 
-    setApkStatus('Gerçek bir APK bağlantısı bulunamadı. GitHub Releases bölümüne APK yükleyin veya doğrudan APK bağlantısı ekleyin.');
+    setApkStatus('Resmî GitHub Releases kaydında indirilebilir APK bulunamadı.');
   };
 
   return (
@@ -256,7 +256,7 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
                           : `En güncel sürüm v${releaseInfo.version}`}
                     </p>
                     <p className="text-[11px] text-[#84a0a0] tabular-nums">
-                      {releaseInfo.sizeLabel} · {releaseInfo.publishedAt}
+                      Kurulu v{releaseInfo.installedVersion} · {releaseInfo.sizeLabel} · {releaseInfo.publishedAt}
                       {releaseInfo.isDemo ? ' · APK dosyası eksik' : ''}
                     </p>
                   </div>
