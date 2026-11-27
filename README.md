@@ -29,7 +29,7 @@ npm run lint
 npm run build
 ```
 
-The app is built with Vite + React + TypeScript and packaged as a native Android app with Capacitor. GitHub Actions builds an installable Android debug APK on every push and exposes it as a workflow artifact. The APK is not a hosted website or a PWA install prompt.
+The app is built with Vite + React + TypeScript and packaged as a native Android app with Capacitor. GitHub Actions runs TypeScript validation and builds a debug APK artifact on every push. The signed-release workflow also creates a versioned, signed Release APK on pushes to the default branch (and on manual dispatch); it increments the latest stable release tag automatically unless a tag is supplied. Release signing uses the repository secrets `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, and `ANDROID_KEY_PASSWORD`. Keep the same release keystore for every update so Android can install the new APK over the existing app.
 
 ## Important update behavior
 
