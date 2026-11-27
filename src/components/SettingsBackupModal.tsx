@@ -137,7 +137,7 @@ export const SettingsBackupModal: React.FC<SettingsBackupModalProps> = ({
           return;
         }
         await onImportBackup(parsed as AppBackupData);
-        setStatusMessage(`${parsed.notes.length} not başarıyla geri yüklendi.`);
+        setStatusMessage(`${parsed.notes?.length ?? 0} not başarıyla geri yüklendi.`);
       } catch {
         setStatusMessage('Yedek dosyası okunamadı.');
       }
